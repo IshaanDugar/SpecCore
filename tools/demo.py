@@ -26,9 +26,9 @@ import cyclemodel as cm  # noqa: E402
 # (label, seed, plen, n_new, measured-core log or None)
 # readable starts first (picked from clean code openings, stopped before the model repeats itself),
 # then the three test prompts that were also run on the board
-TEXTS = [("argparse setup", "def main():\n    parser = argparse.ArgumentParser()\n", 22),
-         ("imports", "try:\n    import numpy as np\nexcept ImportError:\n", 20),
-         ("file reader", "import os\n\n\ndef read_file(path):\n", 22)]
+TEXTS = [("a constructor", "def __init__(self, name, value):\n", 24),
+         ("a Django model", "from django.db import models\n\n\nclass", 22),
+         ("a unit test", "class TestModel(unittest.TestCase):\n\n    def setUp(self):\n", 24)]
 DEFAULT = [("board test 1", 1, 16, 8, "core_bqg.txt"),
            ("board test 2", 7, 8, 16, "core_bqs7.txt"),
            ("board test 3", 11, 8, 16, "core_bqs11.txt")]

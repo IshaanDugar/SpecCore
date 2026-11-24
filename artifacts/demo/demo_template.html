@@ -1,237 +1,359 @@
 <title>SpecCore</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Speculative decoding on a RISC-V core with a custom LLM unit, running on an AMD Kria KV260 FPGA.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500&family=Atkinson+Hyperlegible+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: Console (deal 1/3, seed results-token-by-token-replay-speculative-6a2b·d7aba983·2026-11-24·r0) · redesign: full
- * nav: top bar, wordmark and the board facts · signature: the 1.163× reading beside the 50 sorted per-prompt bars · states: full only (static data, no loading) · console: graphite
- * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · v2.0.0 */
-/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: E, the replay panel is dense; split into one instrument surface with hairline seams so each reading has its own cell */
-:root {
-  color-scheme: dark;
-  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
-  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem; --text-3xl: 2.074rem; --text-reading: 4rem;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --dur-micro: 120ms; --dur-short: 220ms;
-  --container: 1240px;
-  --color-paper: oklch(17% 0.008 250); --color-paper-2: oklch(21% 0.009 250); --color-paper-3: oklch(13.5% 0.007 250);
-  --color-ink: oklch(95% 0.005 250); --color-ink-2: oklch(83% 0.008 250); --color-muted: oklch(71% 0.01 250);
-  --color-rule: oklch(31% 0.01 250); --color-rule-2: oklch(42% 0.012 250);
-  --color-accent: oklch(82% 0.15 80); --color-accent-ink: oklch(18% 0.04 75); --color-accent-soft: oklch(29% 0.05 80); --color-focus: oklch(82% 0.15 80);
-  --color-cool: oklch(77% 0.12 245); --color-cool-soft: oklch(29% 0.05 245); --color-cool-ink: oklch(18% 0.04 245);
-  --color-ok: oklch(76% 0.15 150); --color-ok-soft: oklch(24.5% 0.03 150); --color-bad: oklch(70% 0.17 25); --color-bad-soft: oklch(24.5% 0.035 25);
-  --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif; --font-body: var(--font-display);
-  --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
-  --radius-card: 10px; --radius-pill: 6px; --radius-chip: 4px; --rule-hair: 1px; --tracking-display: -0.03em;
-  /* names the replay script draws with: amber = the draft's guesses, cool = the target (the instrument) */
-  --ground: var(--color-paper-3); --panel: var(--color-paper-2); --ink: var(--color-ink); --muted: var(--color-muted); --rule: var(--color-rule);
-  --draft: var(--color-accent); --draft-bg: var(--color-accent-soft); --verify: var(--color-cool); --fix: var(--color-cool); --fix-bg: var(--color-cool-soft);
-  --ok: var(--color-ok); --ok-bg: var(--color-ok-soft); --bad: var(--color-bad); --bad-bg: var(--color-bad-soft); --lane-off: var(--color-paper-3);
-  --f-body: var(--font-body); --f-mono: var(--font-outlier); --f-head: var(--font-display);
+/* Layout: a datasheet for one chip. Left-aligned single column, 1120px measure; the hero pairs the claim with a live code panel;
+   colour is signal only (amber = draft guess, blue = target check, green/red = accepted/rejected). */
+:root{
+  --paper:#f3f5f4; --surface:#ffffff; --ink:#121a21; --ink-2:#2c3843; --muted:#56636d; --line:#d3dad9; --line-2:#b9c3c2;
+  --draft:#b87500; --draft-bg:#fbefd3; --verify:#1d5bb8; --verify-bg:#e1eaf8; --ok:#18794c; --ok-bg:#dcf0e4; --bad:#b4372a; --bad-bg:#f8e0dc;
+  --on-strong:#ffffff; --code-bg:#ffffff; --focus:#1d5bb8;
+  --font-display:"Archivo", "Helvetica Neue", Arial, sans-serif; --font-body:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-code:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:72px; --s9:112px;
+  --r-sm:4px; --r-md:8px;
+  /* names the replay script draws with */
+  --ground:var(--paper); --panel:var(--surface); --rule:var(--line); --fix:var(--verify); --fix-bg:var(--verify-bg); --lane-off:var(--paper);
+  --f-body:var(--font-body); --f-mono:var(--font-code); --f-head:var(--font-display);
 }
-*, *::before, *::after { box-sizing: border-box; }
-html, body { overflow-x: clip; }
-html { scrollbar-color: var(--color-rule-2) var(--color-paper); }
-body { margin: 0; background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md)/1.55 var(--font-body); -webkit-font-smoothing: antialiased;
-  padding-block: var(--space-lg) var(--space-2xl); padding-left: max(var(--space-md), env(safe-area-inset-left, 0px)); padding-right: max(var(--space-md), env(safe-area-inset-right, 0px)); }
-::selection { background: color-mix(in oklab, var(--color-accent) 25%, transparent); }
-:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-h1, h2 { margin: 0; font-family: var(--font-display); font-weight: 500; letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; overflow-wrap: break-word; min-width: 0; }
-h1 { font-size: var(--text-2xl); }
-h2 { font-size: var(--text-lg); }
-p { margin: 0; text-wrap: pretty; }
-.wrap { max-width: var(--container); margin-inline: auto; display: grid; gap: var(--space-lg); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --paper:#11171c; --surface:#182027; --ink:#e8eef2; --ink-2:#c5d0d8; --muted:#94a3ae; --line:#2b3741; --line-2:#3d4b56;
+  --draft:#f0b443; --draft-bg:#3b2d10; --verify:#7fa9f0; --verify-bg:#1b2b47; --ok:#55c890; --ok-bg:#15332a; --bad:#f07f6c; --bad-bg:#3e1e19;
+  --on-strong:#0d1318; --code-bg:#0f151a; --focus:#7fa9f0; } }
+:root[data-theme="dark"]{
+  color-scheme:dark; --paper:#11171c; --surface:#182027; --ink:#e8eef2; --ink-2:#c5d0d8; --muted:#94a3ae; --line:#2b3741; --line-2:#3d4b56;
+  --draft:#f0b443; --draft-bg:#3b2d10; --verify:#7fa9f0; --verify-bg:#1b2b47; --ok:#55c890; --ok-bg:#15332a; --bad:#f07f6c; --bad-bg:#3e1e19;
+  --on-strong:#0d1318; --code-bg:#0f151a; --focus:#7fa9f0; }
 
-/* top bar */
-.top { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); align-items: baseline; justify-content: space-between; padding-bottom: var(--space-md); border-bottom: var(--rule-hair) solid var(--color-rule); }
-.top p { color: var(--color-muted); font-size: var(--text-sm); max-width: 70ch; }
-.lede { color: var(--color-ink-2); max-width: 72ch; }
+*,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--font-body);-webkit-font-smoothing:antialiased;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+a{color:var(--verify);text-underline-offset:.18em;text-decoration-thickness:1px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;overflow-wrap:break-word;min-width:0}
+h2{font-size:clamp(1.6rem,1.2rem + 1.4vw,2.2rem);font-weight:650;font-stretch:112%;letter-spacing:-.015em;line-height:1.1}
+h3{font-size:1.05rem;font-weight:650;line-height:1.3}
+p{margin:0;text-wrap:pretty}
+.page{max-width:1120px;margin:0 auto}
+section{padding-block:var(--s8);border-top:1px solid var(--line)}
+.intro{display:grid;gap:var(--s3);max-width:68ch;margin-bottom:var(--s6)}
+.intro p{color:var(--ink-2)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
 
-/* one instrument surface: panels joined by hairline seams */
-.surface { display: grid; gap: var(--rule-hair); background: var(--color-rule); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); overflow: hidden; }
-.surface > * { background: var(--color-paper-2); padding: var(--space-md) var(--space-lg); min-width: 0; }
-.cell-head { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); align-items: baseline; justify-content: space-between; }
-.cell-head small, .note { color: var(--color-muted); font-size: var(--text-sm); }
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s3) var(--s5);padding-block:var(--s5)}
+.mark{font:700 1.15rem var(--font-display);font-stretch:125%;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+.nav{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s5);font-size:.95rem}
+.nav a{color:var(--ink-2);text-decoration:none}
+.nav a:hover{color:var(--verify);text-decoration:underline}
 
-/* board results: the reading beside the bars */
-.board { grid-template-columns: minmax(0, 1fr); }
-.board-lead { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-lg); align-items: center; }
-.reading { font: 400 var(--text-reading)/1 var(--font-outlier); letter-spacing: -0.04em; font-variant-numeric: tabular-nums slashed-zero; color: var(--color-ink); }
-.reading-sub { color: var(--color-muted); font-size: var(--text-sm); margin-top: var(--space-xs); }
-.board .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--rule-hair); background: var(--color-rule); padding: 0; }
-.board .facts > .fact { background: var(--color-paper-2); padding: var(--space-md) var(--space-lg); }
-.board .facts > .fact:first-child { display: none; }  /* its value is the large reading above */
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:var(--s7);align-items:center;padding-block:var(--s7) var(--s8)}
+.hero h1{font-size:clamp(2.1rem,1.4rem + 2.6vw,3.3rem);font-weight:700;font-stretch:118%;letter-spacing:-.025em;line-height:1.02}
+.hero .lead{margin-top:var(--s5);font-size:1.15rem;color:var(--ink-2);max-width:46ch}
+.actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s6)}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 var(--s5);border-radius:var(--r-md);font:600 1rem var(--font-body);text-decoration:none;border:1px solid var(--line-2);color:var(--ink);background:var(--surface);
+  transition:background-color .15s ease,border-color .15s ease}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.primary:hover{background:var(--ink-2)}
+.codecard{background:var(--code-bg);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.codecard-head{display:flex;justify-content:space-between;gap:var(--s3);padding:var(--s2) var(--s4);border-bottom:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.codecard pre{margin:0;padding:var(--s4) var(--s5);min-height:11.5em;font:400 .95rem/1.65 var(--font-code);white-space:pre-wrap;word-break:break-word;color:var(--ink)}
+.key{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);padding:var(--s3) var(--s4);border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.key i,.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.k-draft{background:var(--draft)} .k-ok{background:var(--ok)} .k-verify{background:var(--verify)} .k-bad{background:var(--bad)} .k-muted{background:var(--muted)}
 
-/* replay controls */
-.bar { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-lg); align-items: center; }
-.group { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
-.group > span { font: 500 var(--text-sm) var(--font-body); color: var(--color-muted); margin-right: var(--space-2xs); }
-button { font: 500 var(--text-sm)/1 var(--font-body); color: var(--color-ink); background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-pill);
-  min-height: 36px; padding: var(--space-xs) var(--space-sm); cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
-button:hover { border-color: var(--color-muted); background: var(--color-paper); }
-button:active { background: var(--color-paper-3); }
-button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; transition: none; }
-button:disabled { opacity: .5; cursor: not-allowed; }
-button[aria-pressed="true"] { border-color: var(--color-cool); color: var(--color-cool); box-shadow: inset 0 0 0 1px var(--color-cool); }
-button.play { min-width: 92px; background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
-button.play:hover { background: color-mix(in oklab, var(--color-accent) 88%, var(--color-ink)); }
-button.play:active { background: color-mix(in oklab, var(--color-accent) 80%, var(--color-paper)); }
+/* token marks (hero and replay) */
+.t-prompt{color:var(--muted)}
+.t-acc{background:var(--ok-bg);box-shadow:inset 0 -2px 0 var(--ok)}
+.t-fix{box-shadow:inset 0 -2px 0 var(--verify)}
+.t-pend{background:var(--draft-bg);outline:1px dashed var(--draft);outline-offset:-1px}
+.t-rej{background:var(--bad-bg);color:var(--bad);text-decoration:line-through}
+.cursor{display:inline-block;width:8px;height:1.1em;vertical-align:-2px;background:var(--ink);opacity:.5;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
 
-/* the race */
-.race { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.lane { display: grid; gap: var(--space-sm); align-content: start; }
-.lane-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-xs); flex-wrap: wrap; }
-.lane-head b { font: 500 var(--text-lg) var(--font-display); letter-spacing: -0.01em; }
-.lane-head small { color: var(--color-muted); font-size: var(--text-sm); }
-.meter { display: grid; grid-template-columns: repeat(3, auto); gap: var(--space-2xs) var(--space-lg); justify-content: start; }
-.meter div { display: grid; }
-.meter label, .fact label { font: 500 var(--text-xs) var(--font-body); color: var(--color-muted); }
-.meter output { font: 500 var(--text-xl) var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
-pre.text { margin: 0; min-height: 160px; max-height: 280px; overflow: auto; font: 400 var(--text-sm)/1.6 var(--font-outlier); white-space: pre-wrap; word-break: break-word;
-  background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill); padding: var(--space-sm) var(--space-md); color: var(--color-ink-2); }
-.t-prompt { color: var(--color-muted); }
-.t-acc { background: var(--color-ok-soft); box-shadow: inset 0 -2px 0 var(--color-ok); color: var(--color-ink); }
-.t-fix { box-shadow: inset 0 -2px 0 var(--color-cool); color: var(--color-ink); }
-.t-pend { background: var(--color-accent-soft); outline: 1px dashed var(--color-accent); outline-offset: -1px; color: var(--color-ink); }
-.t-rej { background: var(--color-bad-soft); color: var(--color-bad); text-decoration: line-through; }
-.t-cur { background: var(--color-cool-soft); }
-.cursor { display: inline-block; width: 7px; height: 1.1em; vertical-align: -2px; background: var(--color-ink-2); opacity: .6; animation: blink 1s steps(2) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
+/* how it works */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5);margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{display:grid;align-content:start;gap:var(--s2);padding-top:var(--s4);border-top:3px solid var(--line-2);counter-increment:st}
+.steps li::before{content:counter(st);font:700 1.6rem var(--font-display);font-stretch:118%}
+.steps li.d{border-top-color:var(--draft)} .steps li.v{border-top-color:var(--verify)} .steps li.k{border-top-color:var(--ok)}
+.steps p{color:var(--ink-2);font-size:.98rem}
+.diagram{margin-top:var(--s7);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s5);overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:720px;height:auto}
+.diagram figcaption{margin-top:var(--s3);font-size:.9rem;color:var(--muted);max-width:90ch}
 
-/* inside the core */
-.core { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-.phase { font: 500 var(--text-lg) var(--font-display); margin: var(--space-xs) 0 var(--space-2xs); }
-.phase small { font: 400 var(--text-sm) var(--font-body); color: var(--color-muted); margin-left: var(--space-xs); }
-.lanes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--space-2xs); margin-top: var(--space-xs); }
-.lanes div { height: 36px; border-radius: var(--radius-chip); background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); display: grid; place-items: center; font: 400 var(--text-xs) var(--font-outlier); color: var(--color-muted); }
-.lanes div.on { background: var(--color-cool); border-color: var(--color-cool); color: var(--color-cool-ink); }
-.lanes div.on.d { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
-.costs { display: grid; gap: var(--space-xs); margin-top: var(--space-xs); }
-.cost { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; gap: var(--space-xs); align-items: center; font-size: var(--text-sm); }
-.cost .track { height: 8px; background: var(--color-paper-3); border-radius: 2px; overflow: hidden; }
-.cost .fill { height: 100%; background: var(--color-cool); }
-.cost.d .fill { background: var(--color-accent); }
-.cost span:last-child { text-align: right; font-family: var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
+/* results */
+.results{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);gap:var(--s7);align-items:start}
+.figure{font:700 clamp(3.2rem,2.4rem + 3vw,5rem)/1 var(--font-display);font-stretch:112%;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.figure-note{margin-top:var(--s3);color:var(--ink-2);max-width:30ch}
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4) var(--s4) var(--s3)}
+.tl{overflow-x:auto}
+.tl svg{display:block;width:100%;min-width:600px;height:auto}
+#tl svg{cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);font-size:.85rem;color:var(--muted);margin-top:var(--s2)}
+#bfacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5);margin-top:var(--s6)}
+#bfacts .fact:first-child{display:none}
+.fact{display:grid;gap:var(--s1);align-content:start}
+.fact label{font-size:.9rem;color:var(--muted)}
+.fact output{font:650 1.6rem var(--font-display);font-stretch:108%;font-variant-numeric:tabular-nums}
+.fact small{font-size:.9rem;color:var(--ink-2)}
+.tag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--r-sm);font-size:.75rem;font-weight:600;vertical-align:1px}
+.tag.m{background:var(--verify-bg);color:var(--verify)} .tag.e{background:var(--draft-bg);color:var(--draft)}
 
-/* timeline and chart */
-.tl { overflow-x: auto; }
-.tl svg { display: block; width: 100%; min-width: 640px; height: auto; cursor: pointer; }
-#bchart svg { cursor: default; }
-.legend { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); font-size: var(--text-sm); color: var(--color-muted); margin-top: var(--space-xs); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: var(--space-2xs); }
-.k-muted { background: var(--color-muted); } .k-draft { background: var(--color-accent); } .k-verify { background: var(--color-cool); } .k-ok { background: var(--color-ok); } .k-bad { background: var(--color-bad); }
+/* replay tool */
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.tool>*{padding:var(--s5)}
+.tool>*+*{border-top:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s6);align-items:center}
+.group{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.group>span{font-size:.9rem;color:var(--muted);margin-right:var(--s1)}
+button{font:500 .92rem var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-md);min-height:38px;padding:0 var(--s3);cursor:pointer;
+  transition:background-color .12s ease,border-color .12s ease}
+button:hover{border-color:var(--ink)}
+button:active{background:var(--paper)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button[aria-pressed="true"]{border-color:var(--verify);color:var(--verify);box-shadow:inset 0 0 0 1px var(--verify)}
+button.play{min-width:96px;background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:600}
+button.play:hover{background:var(--ink-2)}
+.race{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s5)}
+.lane{display:grid;gap:var(--s3);align-content:start}
+.lane-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);flex-wrap:wrap}
+.lane-head b{font:650 1.1rem var(--font-display);font-stretch:108%}
+.lane-head small{color:var(--muted);font-size:.88rem}
+.meter{display:grid;grid-template-columns:repeat(3,auto);gap:var(--s1) var(--s5);justify-content:start}
+.meter div{display:grid}
+.meter label{font-size:.8rem;color:var(--muted)}
+.meter output{font:650 1.35rem var(--font-display);font-variant-numeric:tabular-nums}
+pre.text{margin:0;min-height:150px;max-height:260px;overflow:auto;font:400 .9rem/1.6 var(--font-code);white-space:pre-wrap;word-break:break-word;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--s3) var(--s4)}
+.core{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:var(--s6)}
+.core h3{margin-bottom:var(--s2)}
+.phase{font:600 1.05rem var(--font-display)}
+.phase small{font:400 .88rem var(--font-body);color:var(--muted);margin-left:var(--s2)}
+.lanes{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:var(--s1);margin-top:var(--s3)}
+.lanes div{height:34px;border-radius:var(--r-sm);background:var(--paper);border:1px dashed var(--line-2);display:grid;place-items:center;font-size:.75rem;color:var(--muted)}
+.lanes div.on{background:var(--verify);border:1px solid var(--verify);color:var(--on-strong)}
+.lanes div.on.d{background:var(--draft);border-color:var(--draft);color:var(--on-strong)}
+.costs{display:grid;gap:var(--s2)}
+.cost{display:grid;grid-template-columns:10rem minmax(0,1fr) 4.5rem;gap:var(--s2);align-items:center;font-size:.88rem}
+.cost .track{height:8px;background:var(--paper);border-radius:2px;overflow:hidden}
+.cost .fill{height:100%;background:var(--verify)}
+.cost.d .fill{background:var(--draft)}
+.cost span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+#facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s5)}
+.howto{margin-top:var(--s4);font-size:.9rem;color:var(--muted);max-width:90ch}
 
-/* facts under the replay */
-.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-md); }
-.fact { display: grid; gap: var(--space-3xs); align-content: start; }
-.fact output { font: 500 var(--text-xl) var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
-.fact small { color: var(--color-muted); font-size: var(--text-sm); }
-.tag { display: inline-block; font: 500 var(--text-xs) var(--font-body); border-radius: var(--radius-chip); padding: 0 var(--space-2xs); margin-left: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule-2); }
-.tag.m { background: var(--color-cool-soft); color: var(--color-cool); border-color: transparent; }
-.tag.e { background: var(--color-accent-soft); color: var(--color-accent); border-color: transparent; }
+/* checks and learning */
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s5) var(--s7)}
+.item{display:grid;gap:var(--s1);padding-top:var(--s3);border-top:1px solid var(--line)}
+.item p{color:var(--ink-2);font-size:.98rem}
+.learn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5) var(--s6)}
 
-.notes { font-size: var(--text-sm); color: var(--color-muted); max-width: 110ch; display: grid; gap: var(--space-xs); }
-.notes b { color: var(--color-ink-2); font-weight: 500; }
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s3);padding-block:var(--s6) var(--s7);border-top:1px solid var(--line);font-size:.92rem;color:var(--muted)}
 
-@media (max-width: 860px) {
-  .race, .core { grid-template-columns: minmax(0, 1fr); }
-  .board-lead { grid-template-columns: minmax(0, 1fr); }
-  .facts, .board .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .surface > * { padding: var(--space-md); }
-  :root { --text-reading: 3rem; }
+@media (max-width:900px){
+  .hero,.results,.race,.core{grid-template-columns:minmax(0,1fr)}
+  .steps,.learn{grid-template-columns:minmax(0,1fr)}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  #facts,#bfacts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  section{padding-block:var(--s7)}
 }
-@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } button { transition: none; } }
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} .cursor{animation:none} button,.btn{transition:none} }
 </style>
 
-<div class="wrap">
+<div class="page">
   <header class="top">
-    <h1>SpecCore</h1>
-    <p>Speculative decoding on my own RISC-V core with custom LLM instructions, running on an AMD Kria KV260 FPGA.</p>
+    <a class="mark" href="#">SpecCore</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how">How it works</a><a href="#results">Results</a><a href="#replay">Replay</a><a href="#learned">What I learned</a><a href="https://github.com/IshaanDugar/SpecCore">GitHub</a>
+    </nav>
   </header>
 
-  <section class="surface board" aria-label="Measured on the KV260">
-    <div class="cell-head"><h2>Measured on the KV260 FPGA</h2><small>50 prompts, 16 prompt + 32 new tokens each, fixed γ = 2, core at 50 MHz, model weights in the board’s DDR4</small></div>
-    <div class="board-lead">
-      <div>
-        <div class="reading" id="breading">1.163×</div>
-        <p class="reading-sub">speedup over plain decoding, sum of plain cycles ÷ sum of speculative cycles</p>
-      </div>
-      <div>
-        <div class="tl" id="bchart"></div>
-        <div class="legend"><span><i class="k-ok"></i>faster than plain decoding</span><span><i class="k-bad"></i>slower than plain</span><span>one bar per prompt, sorted, each run plain and speculative on the board</span></div>
-      </div>
-    </div>
-    <div class="facts" id="bfacts"></div>
-  </section>
-
-  <p class="lede">A 5.2M-parameter code model generates text and a 0.66M-parameter draft guesses ahead. Left: plain decoding, one full read of the weights per token. Right: speculative decoding, where the LLM unit checks every guess in one pass over the weights and the output stays identical. Both run on the same cycle clock. The model is tiny, so its code is plausible rather than correct; what matters here is that both lanes write exactly the same text.</p>
-
-  <section class="surface" aria-label="Replay">
-    <div class="bar" aria-label="Controls">
-      <div class="group" id="prompts"><span>Prompt</span></div>
-      <div class="group" id="modes"><span>Draft length</span>
-        <button id="m-g2" aria-pressed="true">fixed γ = 2</button>
-        <button id="m-gate" aria-pressed="false">confidence gate, γ ≤ 4</button>
-      </div>
-      <div class="group"><span>Replay</span>
-        <button class="play" id="play">▶ Play</button>
-        <button id="step">Next event</button>
-        <button id="speed">Speed 1×</button>
-      </div>
-    </div>
-
-    <div class="race surface" style="border:0;border-radius:0;padding:0">
-      <div class="lane">
-        <div class="lane-head"><b>Plain decoding</b><small>target model, K = 1 lane, 1 token per pass</small></div>
-        <div class="meter">
-          <div><label>cycles</label><output id="p-cyc">0</output></div>
-          <div><label>tokens</label><output id="p-tok">0</output></div>
-          <div><label>target passes</label><output id="p-pass">0</output></div>
-        </div>
-        <pre class="text" id="p-text"></pre>
-      </div>
-      <div class="lane">
-        <div class="lane-head"><b>Speculative decoding</b><small id="s-sub">draft guesses, target verifies K = γ+1 lanes</small></div>
-        <div class="meter">
-          <div><label>cycles</label><output id="s-cyc">0</output></div>
-          <div><label>tokens</label><output id="s-tok">0</output></div>
-          <div><label>target passes</label><output id="s-pass">0</output></div>
-        </div>
-        <pre class="text" id="s-text"></pre>
-      </div>
-    </div>
-
-    <div class="core surface" style="border:0;border-radius:0;padding:0">
-      <div>
-        <h2>Inside the core, speculative lane</h2>
-        <div class="phase" id="phase">Run finished</div>
-        <div class="lanes" id="lanes" aria-label="LLM unit lanes"></div>
-        <p class="note" style="margin-top:var(--space-xs)">Each lane holds one token’s activations; one weight word from DDR is multiplied against all active lanes in the same cycle.</p>
-      </div>
-      <div>
-        <h2 id="cost-h">Cycles in this pass</h2>
-        <div class="costs" id="costs"></div>
-      </div>
-    </div>
-
+  <div class="hero">
     <div>
-      <div class="cell-head"><h2>Whole run on the cycle axis</h2><small>click to jump</small></div>
-      <div class="tl" id="tl"></div>
-      <div class="legend">
-        <span><i class="k-muted"></i>plain: one target pass per token</span>
-        <span><i class="k-draft"></i>draft pass</span>
-        <span><i class="k-verify"></i>target verify pass (taller = more lanes)</span>
-        <span><i class="k-ok"></i>guess accepted</span>
-        <span><i class="k-bad"></i>guess rejected</span>
+      <h1>My own RISC‑V core runs speculative decoding on an FPGA</h1>
+      <p class="lead">A small draft model guesses the next tokens, and a custom LLM unit checks every guess in one pass over the weights. The output is identical and 1.16× faster, measured on an AMD Kria KV260.</p>
+      <div class="actions">
+        <a class="btn primary" href="#replay">Watch the replay</a>
+        <a class="btn" href="https://github.com/IshaanDugar/SpecCore">Read the code on GitHub</a>
       </div>
     </div>
+    <figure class="codecard" style="margin:0">
+      <div class="codecard-head"><span>A real run, replayed</span><span id="hero-count">round 0</span></div>
+      <pre id="hero-code" aria-live="off"></pre>
+      <div class="key"><span><i class="k-draft"></i>draft guess</span><span><i class="k-ok"></i>accepted by the target</span><span><i class="k-verify"></i>written by the target</span><span><i class="k-bad"></i>rejected</span></div>
+    </figure>
+  </div>
 
-    <div class="facts" id="facts"></div>
+  <section id="how">
+    <div class="intro">
+      <h2>How it works</h2>
+      <p>Generating text one token at a time is limited by memory: every token reads all the weights once and does about one multiply per byte. Speculative decoding reuses each weight read for several tokens, so the hardware’s job is to make checking three tokens cost about as much as checking one.</p>
+    </div>
+    <ol class="steps">
+      <li class="d"><h3>The draft guesses</h3><p>A 0.66M-parameter draft model, distilled from the target, proposes the next two tokens. It costs about 18% of a target pass.</p></li>
+      <li class="v"><h3>The target checks them together</h3><p>The 5.2M-parameter target runs one pass with three lanes. Each weight word streamed from DDR is multiplied against all three lanes in the same cycle.</p></li>
+      <li class="k"><h3>Keep what agrees</h3><p>Guesses that match the target’s own choice are kept, the first mismatch is replaced by the target’s token, and the next round starts. The text is exactly what plain decoding would write.</p></li>
+    </ol>
+    <figure class="diagram">
+      <svg viewBox="0 0 960 340" role="img" aria-label="Block diagram of SpecCore on the KV260">
+        <rect x="10" y="20" width="200" height="260" rx="8" fill="var(--paper)" stroke="var(--line-2)"/>
+        <text x="30" y="52" font-family="var(--font-display)" font-weight="650" font-size="17" fill="var(--ink)">Arm Cortex-A53</text>
+        <text x="30" y="78" font-family="var(--font-body)" font-size="14" fill="var(--muted)">loads the program and</text>
+        <text x="30" y="96" font-family="var(--font-body)" font-size="14" fill="var(--muted)">the 6.9 MB model image,</text>
+        <text x="30" y="114" font-family="var(--font-body)" font-size="14" fill="var(--muted)">starts the core, reads</text>
+        <text x="30" y="132" font-family="var(--font-body)" font-size="14" fill="var(--muted)">the results</text>
+        <rect x="30" y="196" width="160" height="64" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+        <text x="46" y="222" font-family="var(--font-display)" font-weight="650" font-size="15" fill="var(--ink)">DDR4, 4 GB</text>
+        <text x="46" y="243" font-family="var(--font-body)" font-size="13" fill="var(--muted)">int8 weights</text>
+        <rect x="270" y="20" width="680" height="260" rx="8" fill="none" stroke="var(--line-2)" stroke-dasharray="5 4"/>
+        <text x="290" y="48" font-family="var(--font-body)" font-size="14" fill="var(--muted)">FPGA fabric, 50 MHz</text>
+        <rect x="290" y="66" width="250" height="194" rx="6" fill="var(--surface)" stroke="var(--ink)"/>
+        <text x="308" y="96" font-family="var(--font-display)" font-weight="650" font-size="16" fill="var(--ink)">RV32IM core</text>
+        <text x="308" y="120" font-family="var(--font-body)" font-size="13.5" fill="var(--ink-2)">5-stage pipeline, forwarding,</text>
+        <text x="308" y="138" font-family="var(--font-body)" font-size="13.5" fill="var(--ink-2)">hazard unit, branch predictor</text>
+        <rect x="308" y="160" width="100" height="40" rx="4" fill="var(--paper)" stroke="var(--line-2)"/>
+        <text x="320" y="185" font-family="var(--font-body)" font-size="13" fill="var(--ink-2)">IROM 64 KB</text>
+        <rect x="420" y="160" width="104" height="40" rx="4" fill="var(--paper)" stroke="var(--line-2)"/>
+        <text x="432" y="185" font-family="var(--font-body)" font-size="13" fill="var(--ink-2)">DMEM 1 MB</text>
+        <text x="308" y="234" font-family="var(--font-body)" font-size="13" fill="var(--muted)">custom-0 instructions drive the unit</text>
+        <rect x="580" y="66" width="350" height="194" rx="6" fill="var(--verify-bg)" stroke="var(--verify)"/>
+        <text x="598" y="96" font-family="var(--font-display)" font-weight="650" font-size="16" fill="var(--ink)">LLM unit</text>
+        <text x="598" y="118" font-family="var(--font-body)" font-size="13.5" fill="var(--ink-2)">VDOTK, ACCQ and 6 more instructions</text>
+        <g font-family="var(--font-body)" font-size="11.5" fill="var(--on-strong)">
+          <rect x="598" y="134" width="36" height="34" rx="3" fill="var(--verify)"/><rect x="638" y="134" width="36" height="34" rx="3" fill="var(--verify)"/><rect x="678" y="134" width="36" height="34" rx="3" fill="var(--verify)"/>
+          <rect x="718" y="134" width="36" height="34" rx="3" fill="var(--surface)" stroke="var(--line-2)"/><rect x="758" y="134" width="36" height="34" rx="3" fill="var(--surface)" stroke="var(--line-2)"/><rect x="798" y="134" width="36" height="34" rx="3" fill="var(--surface)" stroke="var(--line-2)"/><rect x="838" y="134" width="36" height="34" rx="3" fill="var(--surface)" stroke="var(--line-2)"/><rect x="878" y="134" width="36" height="34" rx="3" fill="var(--surface)" stroke="var(--line-2)"/>
+        </g>
+        <text x="598" y="192" font-family="var(--font-body)" font-size="13" fill="var(--ink-2)">8 lanes × 4 int8 multiplies; γ = 2 uses 3 lanes</text>
+        <text x="598" y="234" font-family="var(--font-body)" font-size="13" fill="var(--muted)">one weight word feeds every active lane per cycle</text>
+        <line x1="540" y1="163" x2="580" y2="163" stroke="var(--ink)" stroke-width="1.5"/>
+        <path d="M190 236 C 300 320, 690 330, 752 264" fill="none" stroke="var(--verify)" stroke-width="2"/>
+        <polygon points="744,266 756,256 758,270" fill="var(--verify)"/>
+        <text x="300" y="332" font-family="var(--font-body)" font-size="13" fill="var(--verify)">weight stream: prefetched from DDR, hidden behind compute</text>
+        <line x1="210" y1="110" x2="290" y2="110" stroke="var(--ink)" stroke-width="1.5"/>
+        <polygon points="284,105 292,110 284,115" fill="var(--ink)"/>
+        <text x="218" y="100" font-family="var(--font-body)" font-size="12" fill="var(--muted)">AXI</text>
+      </svg>
+      <figcaption>The core is a 5-stage RV32IM design I extended with an LLM unit. On the board its program and data sit in on-chip memory and the model in DDR4; when a needed weight has not arrived the core’s clock pauses, so cycle counts on the board match the RTL simulation exactly.</figcaption>
+    </figure>
   </section>
 
-  <section class="notes">
-    <p><b>Text colours.</b> Grey is the prompt. Green underline: a draft guess the target accepted (a token that cost no extra target pass). Blue underline: a token the target produced itself, as a correction or bonus. Dashed amber: a guess waiting for verification. Red, struck through: a rejected guess.</p>
-    <p><b>Where the numbers come from.</b> The top panel and the “Same prompt on the FPGA” figures are <b>measured on the KV260</b>: the core runs in the FPGA fabric, the model weights sit in the board’s DDR4, and every output is checked bit for bit against a reference. On the board the core’s cycle counts are identical to the RTL simulation (a full 100,556,084-cycle model run matched exactly), and DDR waits add about 1% wall time. The replay animation is built from the integer model (the core’s exact arithmetic; its round counts match the board runs) and per-pass cycle costs <b>measured</b> on the core, so the replay clock is an <b>estimate built from measured parts</b>. Times in ms use the board’s 50 MHz clock.</p>
+  <section id="results">
+    <div class="intro">
+      <h2>Results, measured on the board</h2>
+      <p>Fifty prompts from the test set, each run twice on the KV260, once with plain decoding and once with speculative decoding: 16 prompt tokens and 32 new tokens each, two guesses per round.</p>
+    </div>
+    <div class="results">
+      <div>
+        <div class="figure" id="breading">1.163×</div>
+        <p class="figure-note">faster than plain decoding over all 50 prompts, with every output bit-exact</p>
+      </div>
+      <div class="chartbox">
+        <div class="tl" id="bchart"></div>
+        <div class="legend"><span><i class="k-ok"></i>faster than plain</span><span><i class="k-bad"></i>slower than plain (the draft guessed badly)</span><span>one bar per prompt, sorted</span></div>
+      </div>
+    </div>
+    <div id="bfacts"></div>
   </section>
+
+  <section id="replay">
+    <div class="intro">
+      <h2>Replay a run</h2>
+      <p>Both decoders write the same text on the same cycle clock. Pick a prompt and press play. The model is tiny, so its code is plausible rather than correct; what matters is that both sides write exactly the same tokens.</p>
+    </div>
+    <div class="tool">
+      <div class="bar" aria-label="Controls">
+        <div class="group" id="prompts"><span>Prompt</span></div>
+        <div class="group" id="modes"><span>Guesses per round</span>
+          <button id="m-g2" aria-pressed="true">fixed γ = 2</button>
+          <button id="m-gate" aria-pressed="false">confidence gate, γ ≤ 4</button>
+        </div>
+        <div class="group"><span>Replay</span>
+          <button class="play" id="play">▶ Play</button>
+          <button id="step">Next event</button>
+          <button id="speed">Speed 1×</button>
+        </div>
+      </div>
+      <div class="race">
+        <div class="lane">
+          <div class="lane-head"><b>Plain decoding</b><small>one target pass per token</small></div>
+          <div class="meter">
+            <div><label>cycles</label><output id="p-cyc">0</output></div>
+            <div><label>tokens</label><output id="p-tok">0</output></div>
+            <div><label>target passes</label><output id="p-pass">0</output></div>
+          </div>
+          <pre class="text" id="p-text"></pre>
+        </div>
+        <div class="lane">
+          <div class="lane-head"><b>Speculative decoding</b><small id="s-sub">draft guesses, target verifies K = γ+1 lanes</small></div>
+          <div class="meter">
+            <div><label>cycles</label><output id="s-cyc">0</output></div>
+            <div><label>tokens</label><output id="s-tok">0</output></div>
+            <div><label>target passes</label><output id="s-pass">0</output></div>
+          </div>
+          <pre class="text" id="s-text"></pre>
+        </div>
+      </div>
+      <div class="core">
+        <div>
+          <h3>Inside the LLM unit</h3>
+          <div class="phase" id="phase">Run finished</div>
+          <div class="lanes" id="lanes" aria-label="LLM unit lanes"></div>
+        </div>
+        <div>
+          <h3 id="cost-h">Cycles in this pass</h3>
+          <div class="costs" id="costs"></div>
+        </div>
+      </div>
+      <div>
+        <h3>The whole run on the cycle axis <span class="muted small">(click to jump)</span></h3>
+        <div class="tl" id="tl"></div>
+        <div class="legend">
+          <span><i class="k-muted"></i>plain: one target pass per token</span><span><i class="k-draft"></i>draft pass</span><span><i class="k-verify"></i>target check (taller = more lanes)</span><span><i class="k-ok"></i>guess accepted</span><span><i class="k-bad"></i>guess rejected</span>
+        </div>
+      </div>
+      <div id="facts"></div>
+    </div>
+    <p class="howto">Board-measured figures come from the KV260. The replay clock is built from per-pass cycle costs measured on the core, so its timing is an estimate made of measured parts; times in ms use the board’s 50 MHz clock. Prompts marked ✓ were also run on the board.</p>
+  </section>
+
+  <section id="checked">
+    <div class="intro"><h2>How I checked it</h2></div>
+    <div class="cols">
+      <div class="item"><h3>Bit-exact everywhere</h3><p>The PyTorch integer model, the C reference and the core produce identical numbers. All 50 board prompts match the reference token for token.</p></div>
+      <div class="item"><h3>Board equals simulation</h3><p>A full 100,556,084-cycle model run took the same number of cycles on the KV260 as in RTL simulation.</p></div>
+      <div class="item"><h3>The LLM unit</h3><p>UVM testbench with a scoreboard and coverage, SVA properties, and mutation testing: a seeded bug triggered 42 scoreboard errors and 7 assertion failures.</p></div>
+      <div class="item"><h3>The core</h3><p>A 586-case RV32IM ISA test and a constrained-random test against a Python instruction-set simulator, which caught all 3 bugs seeded into the pipeline.</p></div>
+    </div>
+  </section>
+
+  <section id="learned">
+    <div class="intro">
+      <h2>What I learned</h2>
+      <p>The project was a way to learn the whole stack, from the maths of a language model down to timing closure on an FPGA.</p>
+    </div>
+    <div class="learn">
+      <div class="item"><h3>Why decoding is memory-bound</h3><p>One token at a time, bandwidth per token, the roofline model.</p></div>
+      <div class="item"><h3>Speculative decoding</h3><p>Drafting, verification, acceptance rate, the speedup formula and the KV-cache rollback.</p></div>
+      <div class="item"><h3>Transformers from the inside</h3><p>Embeddings, attention, RoPE, RMSNorm, the MLP, residuals and the KV cache.</p></div>
+      <div class="item"><h3>Training small models</h3><p>A BPE tokenizer, training from scratch, and distilling a draft from its target.</p></div>
+      <div class="item"><h3>Integer-only inference</h3><p>int8 quantisation, fixed-point scales and an integer softmax that matches bit for bit.</p></div>
+      <div class="item"><h3>CPU microarchitecture</h3><p>Pipelining, hazards, forwarding and branch prediction, applied to choosing the draft length.</p></div>
+      <div class="item"><h3>Custom hardware for AI</h3><p>Custom instructions, broadcast lanes against systolic arrays, decoupled access and execute.</p></div>
+      <div class="item"><h3>FPGA design</h3><p>AXI and DMA, clocking, block RAM and UltraRAM, timing closure on the KV260.</p></div>
+      <div class="item"><h3>Verification</h3><p>UVM, assertions, constrained-random testing against an ISS, mutation testing and gate-level simulation.</p></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>SpecCore, by Ishaan, 2026</span>
+    <a href="https://github.com/IshaanDugar/SpecCore">github.com/IshaanDugar/SpecCore</a>
+  </footer>
 </div>
 
 <script>
@@ -365,7 +487,7 @@ function renderBoard(){
     s+=`<rect x="${x}" y="${top}" width="${Math.max(1,bw-2)}" height="${h}" fill="${v>=1?"var(--ok)":"var(--bad)"}"/>`;});
   const ys=sy(b.sum);
   s+=`<line x1="${x0}" x2="${W-4}" y1="${ys}" y2="${ys}" stroke="var(--ink)" stroke-dasharray="5 4"/><text x="${x0+6}" y="${ys-6}" font-size="12" fill="var(--ink)" font-family="var(--f-body)">all 50 prompts: ${b.sum.toFixed(3)}×</text>`;
-  s+=`<text x="${x0+6}" y="${sy(1)+15}" font-size="12" fill="var(--muted)" font-family="var(--f-body)">plain decoding = 1.0×</text>`;
+  s+=`<text x="${W-8}" text-anchor="end" y="${sy(1)+15}" font-size="12" fill="var(--muted)" font-family="var(--f-body)">plain decoding = 1.0×</text>`;
   s+=`<text x="${W-4}" y="${H-8}" font-size="11" text-anchor="end" fill="var(--muted)" font-family="var(--f-body)">prompts sorted by speedup (${b.slower} of ${b.n} slower than plain)</text></svg>`;
   $("bchart").innerHTML=s;
 }
@@ -391,4 +513,34 @@ D.prompts.forEach((p,i)=>{const b=document.createElement("button"); b.textConten
   b.setAttribute("aria-pressed",i===0); b.onclick=()=>{P=i; document.querySelectorAll("#prompts button").forEach((x,j)=>x.setAttribute("aria-pressed",j===i)); reset(true);}; $("prompts").appendChild(b);});
 renderBoard();
 reset(true);
+</script>
+<script>
+// Hero: replays the real rounds of the first prompt. Amber = draft guesses waiting, green = accepted,
+// red = rejected, blue = the target's own token. Reduced motion shows the finished text.
+(function(){
+  const pr=D.prompts[0], run=pr.runs.g2, el=document.getElementById("hero-code"), cnt=document.getElementById("hero-count");
+  const pc=t=>(pr.pieces[t]??"?").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const head=`<span class="t-prompt">${pr.prompt.map(pc).join("")}</span>`;
+  const done=[];
+  const draw=(extra,r)=>{el.innerHTML=head+done.join("")+extra+`<span class="cursor"></span>`; cnt.textContent=r?`round ${r} of ${run.rounds.length}`:"";};
+  const finish=()=>{done.length=0; run.rounds.forEach(r=>{r.guesses.slice(0,r.n_ok).forEach(t=>done.push(`<span class="t-acc">${pc(t)}</span>`)); done.push(`<span class="t-fix">${pc(r.fix)}</span>`);});
+    el.innerHTML=head+done.join(""); cnt.textContent=`${run.rounds.length} rounds, ${run.stats.acc} of ${run.stats.prop} guesses accepted`;};
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){finish();return;}
+  const wait=ms=>new Promise(res=>setTimeout(res,ms));
+  (async function loop(){
+    for(;;){
+      done.length=0; draw("",0); await wait(900);
+      for(let i=0;i<run.rounds.length;i++){
+        const r=run.rounds[i]; let pend="";
+        for(const g of r.guesses){pend+=`<span class="t-pend">${pc(g)}</span>`; draw(pend,i+1); await wait(260);}
+        await wait(380);
+        const marks=r.guesses.map((g,j)=>j<r.n_ok?`<span class="t-acc">${pc(g)}</span>`:`<span class="t-rej">${pc(g)}</span>`).join("");
+        draw(marks,i+1); await wait(r.n_ok<r.guesses.length?520:280);
+        r.guesses.slice(0,r.n_ok).forEach(g=>done.push(`<span class="t-acc">${pc(g)}</span>`));
+        done.push(`<span class="t-fix">${pc(r.fix)}</span>`); draw("",i+1); await wait(260);
+      }
+      finish(); await wait(3200);
+    }
+  })();
+})();
 </script>

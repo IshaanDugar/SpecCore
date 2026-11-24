@@ -2,7 +2,7 @@
 
 SpecCore runs speculative decoding of a small code language model on a RISC-V core I extended with my own LLM unit, on an AMD Kria KV260 FPGA. The unit checks several draft tokens in about the time it takes to read the model weights once, and the output matches plain greedy decoding bit for bit.
 
-The demo page is [`docs/demo.html`](docs/demo.html). Open it in a browser to see the board results and a token-by-token replay of the draft and verify passes.
+Project site: https://ishaandugar.github.io/SpecCore/ . It has the board results, a diagram of the hardware and a token-by-token replay of the draft and verify passes.
 
 ## Results on the KV260
 
