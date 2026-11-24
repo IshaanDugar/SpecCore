@@ -1,0 +1,394 @@
+<title>SpecCore</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400;500&family=Atkinson+Hyperlegible+Mono:wght@400;500&display=swap">
+<style>
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Console (deal 1/3, seed results-token-by-token-replay-speculative-6a2b·d7aba983·2026-11-24·r0) · redesign: full
+ * nav: top bar, wordmark and the board facts · signature: the 1.163× reading beside the 50 sorted per-prompt bars · states: full only (static data, no loading) · console: graphite
+ * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: E, the replay panel is dense; split into one instrument surface with hairline seams so each reading has its own cell */
+:root {
+  color-scheme: dark;
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem; --text-3xl: 2.074rem; --text-reading: 4rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --dur-micro: 120ms; --dur-short: 220ms;
+  --container: 1240px;
+  --color-paper: oklch(17% 0.008 250); --color-paper-2: oklch(21% 0.009 250); --color-paper-3: oklch(13.5% 0.007 250);
+  --color-ink: oklch(95% 0.005 250); --color-ink-2: oklch(83% 0.008 250); --color-muted: oklch(71% 0.01 250);
+  --color-rule: oklch(31% 0.01 250); --color-rule-2: oklch(42% 0.012 250);
+  --color-accent: oklch(82% 0.15 80); --color-accent-ink: oklch(18% 0.04 75); --color-accent-soft: oklch(29% 0.05 80); --color-focus: oklch(82% 0.15 80);
+  --color-cool: oklch(77% 0.12 245); --color-cool-soft: oklch(29% 0.05 245); --color-cool-ink: oklch(18% 0.04 245);
+  --color-ok: oklch(76% 0.15 150); --color-ok-soft: oklch(24.5% 0.03 150); --color-bad: oklch(70% 0.17 25); --color-bad-soft: oklch(24.5% 0.035 25);
+  --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif; --font-body: var(--font-display);
+  --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
+  --radius-card: 10px; --radius-pill: 6px; --radius-chip: 4px; --rule-hair: 1px; --tracking-display: -0.03em;
+  /* names the replay script draws with: amber = the draft's guesses, cool = the target (the instrument) */
+  --ground: var(--color-paper-3); --panel: var(--color-paper-2); --ink: var(--color-ink); --muted: var(--color-muted); --rule: var(--color-rule);
+  --draft: var(--color-accent); --draft-bg: var(--color-accent-soft); --verify: var(--color-cool); --fix: var(--color-cool); --fix-bg: var(--color-cool-soft);
+  --ok: var(--color-ok); --ok-bg: var(--color-ok-soft); --bad: var(--color-bad); --bad-bg: var(--color-bad-soft); --lane-off: var(--color-paper-3);
+  --f-body: var(--font-body); --f-mono: var(--font-outlier); --f-head: var(--font-display);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { scrollbar-color: var(--color-rule-2) var(--color-paper); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font: 400 var(--text-md)/1.55 var(--font-body); -webkit-font-smoothing: antialiased;
+  padding-block: var(--space-lg) var(--space-2xl); padding-left: max(var(--space-md), env(safe-area-inset-left, 0px)); padding-right: max(var(--space-md), env(safe-area-inset-right, 0px)); }
+::selection { background: color-mix(in oklab, var(--color-accent) 25%, transparent); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+h1, h2 { margin: 0; font-family: var(--font-display); font-weight: 500; letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; overflow-wrap: break-word; min-width: 0; }
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-lg); }
+p { margin: 0; text-wrap: pretty; }
+.wrap { max-width: var(--container); margin-inline: auto; display: grid; gap: var(--space-lg); }
+
+/* top bar */
+.top { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-lg); align-items: baseline; justify-content: space-between; padding-bottom: var(--space-md); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.top p { color: var(--color-muted); font-size: var(--text-sm); max-width: 70ch; }
+.lede { color: var(--color-ink-2); max-width: 72ch; }
+
+/* one instrument surface: panels joined by hairline seams */
+.surface { display: grid; gap: var(--rule-hair); background: var(--color-rule); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); overflow: hidden; }
+.surface > * { background: var(--color-paper-2); padding: var(--space-md) var(--space-lg); min-width: 0; }
+.cell-head { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); align-items: baseline; justify-content: space-between; }
+.cell-head small, .note { color: var(--color-muted); font-size: var(--text-sm); }
+
+/* board results: the reading beside the bars */
+.board { grid-template-columns: minmax(0, 1fr); }
+.board-lead { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-lg); align-items: center; }
+.reading { font: 400 var(--text-reading)/1 var(--font-outlier); letter-spacing: -0.04em; font-variant-numeric: tabular-nums slashed-zero; color: var(--color-ink); }
+.reading-sub { color: var(--color-muted); font-size: var(--text-sm); margin-top: var(--space-xs); }
+.board .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--rule-hair); background: var(--color-rule); padding: 0; }
+.board .facts > .fact { background: var(--color-paper-2); padding: var(--space-md) var(--space-lg); }
+.board .facts > .fact:first-child { display: none; }  /* its value is the large reading above */
+
+/* replay controls */
+.bar { display: flex; flex-wrap: wrap; gap: var(--space-sm) var(--space-lg); align-items: center; }
+.group { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+.group > span { font: 500 var(--text-sm) var(--font-body); color: var(--color-muted); margin-right: var(--space-2xs); }
+button { font: 500 var(--text-sm)/1 var(--font-body); color: var(--color-ink); background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule-2); border-radius: var(--radius-pill);
+  min-height: 36px; padding: var(--space-xs) var(--space-sm); cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+button:hover { border-color: var(--color-muted); background: var(--color-paper); }
+button:active { background: var(--color-paper-3); }
+button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; transition: none; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button[aria-pressed="true"] { border-color: var(--color-cool); color: var(--color-cool); box-shadow: inset 0 0 0 1px var(--color-cool); }
+button.play { min-width: 92px; background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
+button.play:hover { background: color-mix(in oklab, var(--color-accent) 88%, var(--color-ink)); }
+button.play:active { background: color-mix(in oklab, var(--color-accent) 80%, var(--color-paper)); }
+
+/* the race */
+.race { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lane { display: grid; gap: var(--space-sm); align-content: start; }
+.lane-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-xs); flex-wrap: wrap; }
+.lane-head b { font: 500 var(--text-lg) var(--font-display); letter-spacing: -0.01em; }
+.lane-head small { color: var(--color-muted); font-size: var(--text-sm); }
+.meter { display: grid; grid-template-columns: repeat(3, auto); gap: var(--space-2xs) var(--space-lg); justify-content: start; }
+.meter div { display: grid; }
+.meter label, .fact label { font: 500 var(--text-xs) var(--font-body); color: var(--color-muted); }
+.meter output { font: 500 var(--text-xl) var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
+pre.text { margin: 0; min-height: 160px; max-height: 280px; overflow: auto; font: 400 var(--text-sm)/1.6 var(--font-outlier); white-space: pre-wrap; word-break: break-word;
+  background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill); padding: var(--space-sm) var(--space-md); color: var(--color-ink-2); }
+.t-prompt { color: var(--color-muted); }
+.t-acc { background: var(--color-ok-soft); box-shadow: inset 0 -2px 0 var(--color-ok); color: var(--color-ink); }
+.t-fix { box-shadow: inset 0 -2px 0 var(--color-cool); color: var(--color-ink); }
+.t-pend { background: var(--color-accent-soft); outline: 1px dashed var(--color-accent); outline-offset: -1px; color: var(--color-ink); }
+.t-rej { background: var(--color-bad-soft); color: var(--color-bad); text-decoration: line-through; }
+.t-cur { background: var(--color-cool-soft); }
+.cursor { display: inline-block; width: 7px; height: 1.1em; vertical-align: -2px; background: var(--color-ink-2); opacity: .6; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* inside the core */
+.core { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.phase { font: 500 var(--text-lg) var(--font-display); margin: var(--space-xs) 0 var(--space-2xs); }
+.phase small { font: 400 var(--text-sm) var(--font-body); color: var(--color-muted); margin-left: var(--space-xs); }
+.lanes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--space-2xs); margin-top: var(--space-xs); }
+.lanes div { height: 36px; border-radius: var(--radius-chip); background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); display: grid; place-items: center; font: 400 var(--text-xs) var(--font-outlier); color: var(--color-muted); }
+.lanes div.on { background: var(--color-cool); border-color: var(--color-cool); color: var(--color-cool-ink); }
+.lanes div.on.d { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
+.costs { display: grid; gap: var(--space-xs); margin-top: var(--space-xs); }
+.cost { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 4.5rem; gap: var(--space-xs); align-items: center; font-size: var(--text-sm); }
+.cost .track { height: 8px; background: var(--color-paper-3); border-radius: 2px; overflow: hidden; }
+.cost .fill { height: 100%; background: var(--color-cool); }
+.cost.d .fill { background: var(--color-accent); }
+.cost span:last-child { text-align: right; font-family: var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
+
+/* timeline and chart */
+.tl { overflow-x: auto; }
+.tl svg { display: block; width: 100%; min-width: 640px; height: auto; cursor: pointer; }
+#bchart svg { cursor: default; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-md); font-size: var(--text-sm); color: var(--color-muted); margin-top: var(--space-xs); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: var(--space-2xs); }
+.k-muted { background: var(--color-muted); } .k-draft { background: var(--color-accent); } .k-verify { background: var(--color-cool); } .k-ok { background: var(--color-ok); } .k-bad { background: var(--color-bad); }
+
+/* facts under the replay */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-md); }
+.fact { display: grid; gap: var(--space-3xs); align-content: start; }
+.fact output { font: 500 var(--text-xl) var(--font-outlier); font-variant-numeric: tabular-nums slashed-zero; }
+.fact small { color: var(--color-muted); font-size: var(--text-sm); }
+.tag { display: inline-block; font: 500 var(--text-xs) var(--font-body); border-radius: var(--radius-chip); padding: 0 var(--space-2xs); margin-left: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule-2); }
+.tag.m { background: var(--color-cool-soft); color: var(--color-cool); border-color: transparent; }
+.tag.e { background: var(--color-accent-soft); color: var(--color-accent); border-color: transparent; }
+
+.notes { font-size: var(--text-sm); color: var(--color-muted); max-width: 110ch; display: grid; gap: var(--space-xs); }
+.notes b { color: var(--color-ink-2); font-weight: 500; }
+
+@media (max-width: 860px) {
+  .race, .core { grid-template-columns: minmax(0, 1fr); }
+  .board-lead { grid-template-columns: minmax(0, 1fr); }
+  .facts, .board .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .surface > * { padding: var(--space-md); }
+  :root { --text-reading: 3rem; }
+}
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } button { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>SpecCore</h1>
+    <p>Speculative decoding on my own RISC-V core with custom LLM instructions, running on an AMD Kria KV260 FPGA.</p>
+  </header>
+
+  <section class="surface board" aria-label="Measured on the KV260">
+    <div class="cell-head"><h2>Measured on the KV260 FPGA</h2><small>50 prompts, 16 prompt + 32 new tokens each, fixed γ = 2, core at 50 MHz, model weights in the board’s DDR4</small></div>
+    <div class="board-lead">
+      <div>
+        <div class="reading" id="breading">1.163×</div>
+        <p class="reading-sub">speedup over plain decoding, sum of plain cycles ÷ sum of speculative cycles</p>
+      </div>
+      <div>
+        <div class="tl" id="bchart"></div>
+        <div class="legend"><span><i class="k-ok"></i>faster than plain decoding</span><span><i class="k-bad"></i>slower than plain</span><span>one bar per prompt, sorted, each run plain and speculative on the board</span></div>
+      </div>
+    </div>
+    <div class="facts" id="bfacts"></div>
+  </section>
+
+  <p class="lede">A 5.2M-parameter code model generates text and a 0.66M-parameter draft guesses ahead. Left: plain decoding, one full read of the weights per token. Right: speculative decoding, where the LLM unit checks every guess in one pass over the weights and the output stays identical. Both run on the same cycle clock. The model is tiny, so its code is plausible rather than correct; what matters here is that both lanes write exactly the same text.</p>
+
+  <section class="surface" aria-label="Replay">
+    <div class="bar" aria-label="Controls">
+      <div class="group" id="prompts"><span>Prompt</span></div>
+      <div class="group" id="modes"><span>Draft length</span>
+        <button id="m-g2" aria-pressed="true">fixed γ = 2</button>
+        <button id="m-gate" aria-pressed="false">confidence gate, γ ≤ 4</button>
+      </div>
+      <div class="group"><span>Replay</span>
+        <button class="play" id="play">▶ Play</button>
+        <button id="step">Next event</button>
+        <button id="speed">Speed 1×</button>
+      </div>
+    </div>
+
+    <div class="race surface" style="border:0;border-radius:0;padding:0">
+      <div class="lane">
+        <div class="lane-head"><b>Plain decoding</b><small>target model, K = 1 lane, 1 token per pass</small></div>
+        <div class="meter">
+          <div><label>cycles</label><output id="p-cyc">0</output></div>
+          <div><label>tokens</label><output id="p-tok">0</output></div>
+          <div><label>target passes</label><output id="p-pass">0</output></div>
+        </div>
+        <pre class="text" id="p-text"></pre>
+      </div>
+      <div class="lane">
+        <div class="lane-head"><b>Speculative decoding</b><small id="s-sub">draft guesses, target verifies K = γ+1 lanes</small></div>
+        <div class="meter">
+          <div><label>cycles</label><output id="s-cyc">0</output></div>
+          <div><label>tokens</label><output id="s-tok">0</output></div>
+          <div><label>target passes</label><output id="s-pass">0</output></div>
+        </div>
+        <pre class="text" id="s-text"></pre>
+      </div>
+    </div>
+
+    <div class="core surface" style="border:0;border-radius:0;padding:0">
+      <div>
+        <h2>Inside the core, speculative lane</h2>
+        <div class="phase" id="phase">Run finished</div>
+        <div class="lanes" id="lanes" aria-label="LLM unit lanes"></div>
+        <p class="note" style="margin-top:var(--space-xs)">Each lane holds one token’s activations; one weight word from DDR is multiplied against all active lanes in the same cycle.</p>
+      </div>
+      <div>
+        <h2 id="cost-h">Cycles in this pass</h2>
+        <div class="costs" id="costs"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="cell-head"><h2>Whole run on the cycle axis</h2><small>click to jump</small></div>
+      <div class="tl" id="tl"></div>
+      <div class="legend">
+        <span><i class="k-muted"></i>plain: one target pass per token</span>
+        <span><i class="k-draft"></i>draft pass</span>
+        <span><i class="k-verify"></i>target verify pass (taller = more lanes)</span>
+        <span><i class="k-ok"></i>guess accepted</span>
+        <span><i class="k-bad"></i>guess rejected</span>
+      </div>
+    </div>
+
+    <div class="facts" id="facts"></div>
+  </section>
+
+  <section class="notes">
+    <p><b>Text colours.</b> Grey is the prompt. Green underline: a draft guess the target accepted (a token that cost no extra target pass). Blue underline: a token the target produced itself, as a correction or bonus. Dashed amber: a guess waiting for verification. Red, struck through: a rejected guess.</p>
+    <p><b>Where the numbers come from.</b> The top panel and the “Same prompt on the FPGA” figures are <b>measured on the KV260</b>: the core runs in the FPGA fabric, the model weights sit in the board’s DDR4, and every output is checked bit for bit against a reference. On the board the core’s cycle counts are identical to the RTL simulation (a full 100,556,084-cycle model run matched exactly), and DDR waits add about 1% wall time. The replay animation is built from the integer model (the core’s exact arithmetic; its round counts match the board runs) and per-pass cycle costs <b>measured</b> on the core, so the replay clock is an <b>estimate built from measured parts</b>. Times in ms use the board’s 50 MHz clock.</p>
+  </section>
+</div>
+
+<script>
+const D=/*__DATA__*/null;
+const MHZ=50;   // the KV260 build clock (measured runs)
+const $=id=>document.getElementById(id);
+const fmtM=c=>(c/1e6).toFixed(2)+"M";
+const esc=s=>s.replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]));
+const C=D.costs, pc=(m,k)=>C[m].total[0]+C[m].total[1]*k;
+let P=0, MODE="g2", T=0, playing=false, speed=1, sched=null, last=0;
+
+function build(){
+  const pr=D.prompts[P], run=pr.runs[MODE], n=pr.plain.length;
+  const plainCost=pc("target",1);
+  const plain=pr.plain.map((t,i)=>({t, end:(i+1)*plainCost}));
+  const segs=[], toks=[]; let c=0, made=0, passes=0;
+  run.rounds.forEach((r,ri)=>{
+    const g=r.guesses.length, peek=r.dpass>g;
+    if(r.dpass===0 && r.behind>0){const d=C.draft.total[0]+C.draft.total[1]*r.behind;
+      segs.push({type:"draft",start:c,end:c+=d,k:r.behind,label:`draft catch-up (${r.behind} token${r.behind>1?"s":""})`,round:ri,i:-1});}
+    for(let i=0;i<r.dpass;i++){
+      const k=1+(i===0?r.behind:0), d=pc("draft",1)+(i===0?C.draft.total[1]*r.behind:0);
+      segs.push({type:"draft",start:c,end:c+=d,k,round:ri,i,peek:peek&&i===r.dpass-1,
+        label:peek&&i===r.dpass-1?`draft pass ${i+1}: confidence too low, guess not submitted`:
+        `draft pass ${i+1} of ${r.dpass}: guess ${i+1}`+(i===0&&r.behind?` (+ catch-up of ${r.behind})`:"")});
+    }
+    const K=g+1, d=pc("target",K);
+    segs.push({type:"verify",start:c,end:c+=d,k:K,round:ri,label:`target verify pass, K = ${K} lane${K>1?"s":""}`});
+    passes++;
+    r.guesses.forEach((t,i)=>{if(i<r.n_ok) toks.push({t,kind:"acc",at:c});});
+    toks.push({t:r.fix,kind:"fix",at:c}); made+=r.n_ok+1;
+  });
+  return {pr,run,plain,plainCost,segs,toks:toks.slice(0,n),specEnd:c,plainEnd:n*plainCost};
+}
+
+function piece(t){return D.prompts[P].pieces[t]??"?"}
+function render(){
+  const S=sched, pr=S.pr;
+  const promptTxt=`<span class="t-prompt">${esc(pr.prompt.map(piece).join(""))}</span>`;
+  // plain lane
+  const pDone=S.plain.filter(x=>x.end<=T).length;
+  let ph=promptTxt+S.plain.slice(0,pDone).map(x=>`<span>${esc(piece(x.t))}</span>`).join("");
+  if(pDone<S.plain.length) ph+=`<span class="cursor"></span>`;
+  $("p-text").innerHTML=ph;
+  $("p-cyc").textContent=fmtM(Math.min(T,S.plainEnd)); $("p-tok").textContent=pDone; $("p-pass").textContent=pDone+(pDone<S.plain.length&&T>0?1:0);
+  // spec lane
+  const done=S.toks.filter(x=>x.at<=T);
+  let sh=promptTxt+done.map(x=>`<span class="t-${x.kind}">${esc(piece(x.t))}</span>`).join("");
+  const seg=S.segs.find(s=>s.start<=T&&T<s.end);
+  if(seg){
+    const r=S.run.rounds[seg.round];
+    const shown=seg.type==="verify"?r.guesses.length:Math.max(0,seg.i+(seg.peek?0:1));
+    sh+=r.guesses.slice(0,shown).map(t=>`<span class="t-pend">${esc(piece(t))}</span>`).join("");
+    sh+=`<span class="cursor"></span>`;
+  } else if(T<S.specEnd||T===0) sh+=`<span class="cursor"></span>`;
+  $("s-text").innerHTML=sh;
+  const sp=S.segs.filter(s=>s.type==="verify"&&s.end<=T).length;
+  $("s-cyc").textContent=fmtM(Math.min(T,S.specEnd)); $("s-tok").textContent=done.length; $("s-pass").textContent=sp+(seg&&seg.type==="verify"?1:0);
+  $("s-sub").textContent=MODE==="g2"?"draft guesses 2, target verifies K = 3 lanes":"draft guesses until unsure (max 4), target verifies K = guesses + 1";
+  for(const id of ["p-text","s-text"]){const el=$(id); el.scrollTop=el.scrollHeight;}
+  renderCore(seg); renderTL(); renderFacts();
+}
+
+function renderCore(seg){
+  const L=$("lanes"); L.innerHTML="";
+  const k=seg?seg.k:0, d=seg&&seg.type==="draft";
+  for(let i=0;i<8;i++){const b=document.createElement("div"); b.textContent="lane "+i; if(i<Math.min(k,8)) b.className="on"+(d?" d":""); L.appendChild(b);}
+  if(!seg){
+    $("phase").innerHTML=T>=sched.specEnd&&T>0?`Run finished <small>${sched.run.stats.rounds} rounds, ${sched.run.stats.acc} of ${sched.run.stats.prop} guesses accepted</small>`:"Idle";
+    const S=sched, dr=S.segs.filter(g=>g.type==="draft").reduce((a,g)=>a+g.end-g.start,0), vf=S.specEnd-dr, max=S.plainEnd;
+    const row=(name,v,cls)=>`<div class="cost${cls}"><span>${name}</span><div class="track"><div class="fill" style="width:${(v/max*100).toFixed(1)}%;${cls===" p"?"background:var(--muted)":""}"></div></div><span>${fmtM(v)}</span></div>`;
+    $("cost-h").textContent="Where the cycles went, whole run";
+    $("costs").innerHTML=row("plain: "+S.plain.length+" target passes",S.plainEnd," p")+row("spec: draft passes",dr," d")+row("spec: verify passes",vf,"")+row("<b>spec: total</b>",S.specEnd,""); return;
+  }
+  const m=d?"draft":"target";
+  $("phase").innerHTML=`${d?"Draft model":"Target model"} <small>${seg.label}</small>`;
+  $("cost-h").textContent=`Cycles in this pass (${m}, ${seg.k} lane${seg.k>1?"s":""})`;
+  const names={matvec:"weight matvec (VDOTR)",attn:"attention",normq:"norm + quantise",other:"other"};
+  const rows=Object.keys(names).map(b=>[b,Math.max(0,C[m][b][0]+C[m][b][1]*seg.k)]);
+  const max=pc("target",5);
+  $("costs").innerHTML=rows.map(([b,v])=>`<div class="cost${d?" d":""}"><span>${names[b]}</span><div class="track"><div class="fill" style="width:${(v/max*100).toFixed(1)}%"></div></div><span>${fmtM(v)}</span></div>`).join("")
+    +`<div class="cost${d?" d":""}"><span><b>total</b></span><div class="track"><div class="fill" style="width:${((seg.end-seg.start)/max*100).toFixed(1)}%"></div></div><span><b>${fmtM(seg.end-seg.start)}</b></span></div>`;
+}
+
+function renderTL(){
+  const S=sched, W=1000, x0=70, end=Math.max(S.plainEnd,S.specEnd), sx=c=>x0+(c/end)*(W-x0-10);
+  let s=`<svg viewBox="0 0 ${W} 150" role="img" aria-label="Timeline of both runs in cycles">`;
+  s+=`<text x="0" y="42" font-size="12" fill="var(--muted)" font-family="var(--f-body)">plain</text><text x="0" y="98" font-size="12" fill="var(--muted)" font-family="var(--f-body)">speculative</text>`;
+  S.plain.forEach((p,i)=>{const a=sx(i*S.plainCost),b=sx(p.end); s+=`<rect x="${a+.5}" y="30" width="${Math.max(1,b-a-1)}" height="18" fill="var(--muted)" opacity="${i%2?0.55:0.75}"/>`;});
+  S.segs.forEach(g=>{const a=sx(g.start),b=sx(g.end),h=g.type==="verify"?10+g.k*5:12,y=106-h;
+    s+=`<rect x="${a+.3}" y="${y}" width="${Math.max(.8,b-a-.6)}" height="${h}" fill="${g.type==="verify"?"var(--verify)":"var(--draft)"}" opacity="${g.peek?0.45:1}"/>`;
+    if(g.type==="verify"){const r=S.run.rounds[g.round];r.guesses.forEach((_,i)=>{s+=`<rect x="${a+1+i*7}" y="110" width="5" height="5" fill="${i<r.n_ok?"var(--ok)":"var(--bad)"}"/>`;});}});
+  const ticks=5;for(let i=0;i<=ticks;i++){const c=end*i/ticks,x=sx(c);s+=`<line x1="${x}" x2="${x}" y1="122" y2="126" stroke="var(--muted)"/><text x="${x}" y="140" font-size="11" text-anchor="${i===0?"start":i===ticks?"end":"middle"}" fill="var(--muted)" font-family="var(--f-mono)">${fmtM(c)}</text>`;}
+  const px=sx(Math.min(T,end));
+  s+=`<line x1="${px}" x2="${px}" y1="18" y2="120" stroke="var(--fix)" stroke-width="2"/>`;
+  s+=`<rect x="0" y="0" width="${W}" height="150" fill="transparent" id="hit"/></svg>`;
+  $("tl").innerHTML=s;
+  $("tl").querySelector("svg").onclick=e=>{const r=e.currentTarget.getBoundingClientRect(); const fx=(e.clientX-r.left)/r.width*W;
+    T=Math.max(0,Math.min(end,(fx-x0)/(W-x0-10)*end)); stop(); render();};
+}
+
+function renderFacts(){
+  const S=sched, st=S.run.stats, n=S.plain.length, est=S.plainEnd/S.specEnd;
+  const ms=c=>(c/(MHZ*1e3)).toFixed(0)+" ms";
+  let h=`<div class="fact"><label>Speedup, this replay <span class="tag e">est.</span></label><output>${est.toFixed(2)}×</output><small>${fmtM(S.plainEnd)} vs ${fmtM(S.specEnd)} cycles (${ms(S.plainEnd)} vs ${ms(S.specEnd)})</small></div>`;
+  h+=`<div class="fact"><label>Tokens per target pass</label><output>${(n/st.tpass).toFixed(2)}</output><small>plain decoding: 1.00</small></div>`;
+  h+=`<div class="fact"><label>Guesses accepted</label><output>${st.acc} / ${st.prop}</output><small>${st.rounds} rounds, ${st.dpass} draft passes${st.peek?`, ${st.peek} cut by the gate`:""}</small></div>`;
+  const core=S.pr.core;
+  if(core&&MODE==="g2") h+=`<div class="fact"><label>Same prompt on the FPGA <span class="tag m">measured</span></label><output>${(core.plain/core.spec).toFixed(3)}×</output><small>${fmtM(core.plain)} vs ${fmtM(core.spec)} cycles on the KV260 board, output bit-exact, cycle counts identical to RTL simulation</small></div>`;
+  else h+=`<div class="fact"><label>On the FPGA, 50 prompts <span class="tag m">measured</span></label><output>${b50().sum.toFixed(3)}×</output><small>fixed γ2 on the KV260. The confidence gate adds only about 2.5% across 50 prompts (est.)</small></div>`;
+  $("facts").innerHTML=h;
+}
+
+function b50(){
+  const B=D.board50, r=B.rows, P=r.reduce((a,x)=>a+x[0],0), S=r.reduce((a,x)=>a+x[1],0);
+  const sp=r.map(x=>x[0]/x[1]).sort((a,b)=>a-b);
+  return {B,n:r.length,sum:P/S,sp,slower:sp.filter(x=>x<1).length,med:sp[Math.floor(sp.length/2)]};
+}
+function renderBoard(){
+  const b=b50(), B=b.B;
+  $("bfacts").innerHTML=
+    `<div class="fact"><label>Speedup, 50 prompts <span class="tag m">measured</span></label><output>${b.sum.toFixed(3)}×</output><small>sum of plain ÷ sum of speculative cycles; median prompt ${b.med.toFixed(2)}×</small></div>`+
+    `<div class="fact"><label>Correct output <span class="tag m">measured</span></label><output>${b.n} / ${b.n}</output><small>every prompt bit-exact against the reference, plain and speculative</small></div>`+
+    `<div class="fact"><label>Board vs RTL simulation <span class="tag m">measured</span></label><output>0 cycles</output><small>difference on a full 100.6M-cycle model run: the board reproduces the simulation exactly</small></div>`+
+    `<div class="fact"><label>Real DDR cost <span class="tag m">measured</span></label><output>+${B.ddr_plain.toFixed(1)}%</output><small>wall time over core cycles (speculative +${B.ddr_spec.toFixed(1)}%); with the prompt included, ${B.wall.toFixed(2)}× in real time</small></div>`;
+  const W=1000,H=210,x0=46,y0=12,y1=176,lo=0.8,hi=1.45,sy=v=>y1-(v-lo)/(hi-lo)*(y1-y0),bw=(W-x0-8)/b.n;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Per-prompt speedup on the KV260, sorted">`;
+  for(const v of [0.8,0.9,1.0,1.1,1.2,1.3,1.4]){const y=sy(v);
+    s+=`<line x1="${x0}" x2="${W-4}" y1="${y}" y2="${y}" stroke="var(--rule)" stroke-width="${v===1?1.5:1}"/><text x="${x0-6}" y="${y+4}" font-size="11" text-anchor="end" fill="var(--muted)" font-family="var(--f-mono)">${v.toFixed(1)}×</text>`;}
+  b.sp.forEach((v,i)=>{const x=x0+i*bw+1, top=Math.min(sy(v),sy(1)), h=Math.max(1,Math.abs(sy(v)-sy(1)));
+    s+=`<rect x="${x}" y="${top}" width="${Math.max(1,bw-2)}" height="${h}" fill="${v>=1?"var(--ok)":"var(--bad)"}"/>`;});
+  const ys=sy(b.sum);
+  s+=`<line x1="${x0}" x2="${W-4}" y1="${ys}" y2="${ys}" stroke="var(--ink)" stroke-dasharray="5 4"/><text x="${x0+6}" y="${ys-6}" font-size="12" fill="var(--ink)" font-family="var(--f-body)">all 50 prompts: ${b.sum.toFixed(3)}×</text>`;
+  s+=`<text x="${x0+6}" y="${sy(1)+15}" font-size="12" fill="var(--muted)" font-family="var(--f-body)">plain decoding = 1.0×</text>`;
+  s+=`<text x="${W-4}" y="${H-8}" font-size="11" text-anchor="end" fill="var(--muted)" font-family="var(--f-body)">prompts sorted by speedup (${b.slower} of ${b.n} slower than plain)</text></svg>`;
+  $("bchart").innerHTML=s;
+}
+function tick(now){
+  if(!playing) return;
+  const dt=Math.min(100,now-last); last=now;
+  T+=dt*speed*4000;                // 1x: 4M simulated cycles per second of replay
+  const end=Math.max(sched.plainEnd,sched.specEnd);
+  if(T>=end){T=end; stop();}
+  render(); if(playing) requestAnimationFrame(tick);
+}
+function play(){ if(T>=Math.max(sched.plainEnd,sched.specEnd)) T=0; playing=true; $("play").textContent="❚❚ Pause"; last=performance.now(); requestAnimationFrame(tick); }
+function stop(){ playing=false; $("play").textContent="▶ Play"; }
+function reset(toEnd){ sched=build(); T=toEnd?Math.max(sched.plainEnd,sched.specEnd):0; stop(); render(); }
+
+$("play").onclick=()=>playing?stop():play();
+$("step").onclick=()=>{stop(); const ev=[...sched.segs.map(s=>s.end),...sched.plain.map(p=>p.end)].filter(c=>c>T+1).sort((a,b)=>a-b);
+  T=ev.length?ev[0]:0; render();};
+const speeds=[0.5,1,2,4]; $("speed").onclick=()=>{speed=speeds[(speeds.indexOf(speed)+1)%speeds.length]; $("speed").textContent=`Speed ${speed}×`;};
+function setMode(m){MODE=m; $("m-g2").setAttribute("aria-pressed",m==="g2"); $("m-gate").setAttribute("aria-pressed",m==="gate"); reset(!playing&&T>0); }
+$("m-g2").onclick=()=>setMode("g2"); $("m-gate").onclick=()=>setMode("gate");
+D.prompts.forEach((p,i)=>{const b=document.createElement("button"); b.textContent=p.label+(p.core?" ✓":""); b.title=p.core?"also run on the core (measured)":"integer-model replay";
+  b.setAttribute("aria-pressed",i===0); b.onclick=()=>{P=i; document.querySelectorAll("#prompts button").forEach((x,j)=>x.setAttribute("aria-pressed",j===i)); reset(true);}; $("prompts").appendChild(b);});
+renderBoard();
+reset(true);
+</script>

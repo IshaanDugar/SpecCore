@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SpecCore Live</title>
+<meta name="description" content="Type the start of some Python and watch a small draft model guess ahead while the bigger model checks its guesses, with the speed measured on the SpecCore RISC-V core.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@600&family=Red+Hat+Text:wght@400;500&family=Red+Hat+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Furrow (deal 3/3, seed interactive-demo-small-code-d590·d7aba983·2026-11-22·r0) · redesign: full
+ * nav: top bar, wordmark only · signature: the code page, written live, each guess marked kept or replaced · states: empty (how it works), running, done, error (server offline)
+ * axes: light/grotesk-sans/warm · posture: committed · contrast: pass · v2.0.0 */
+/* Hallmark · dropped ids cands, dp, laneh, mode, n, nv, pace, pc and the rest of the old panel ids · the page’s own script was rewritten with it; the server contract (/generate prompt, mode, n; ?auto) is kept */
+/* Hallmark · answered 46a: the speedup figure is computed live from the server’s measured pass costs, never typed in · answered F24: the verdict is Furrow’s notebook card, ink ring plus lift by the theme’s own rule */
+/* Hallmark · pre-emit critique: P2 H2 E2 S2 R1 V2 · weakest: R, the detail panels; moved behind tabs so the first view is one input, one button, one page of code */
+/* tokens.css (Furrow + shared scale) */
+:root {
+  color-scheme: light;
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem; --text-3xl: 2.074rem; --text-4xl: 2.986rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --dur-micro: 120ms; --dur-short: 220ms;
+  --color-error: oklch(52% 0.19 27); --color-success: oklch(50% 0.12 150);
+  --container: 1180px; --gutter: 40px;
+  --color-paper: oklch(96% 0.011 85); --color-paper-2: oklch(99.5% 0.005 85); --color-paper-3: oklch(92% 0.016 85);
+  --color-ink: oklch(18% 0.006 60); --color-ink-2: oklch(28% 0.008 60); --color-muted: oklch(44% 0.012 60); --color-rule: oklch(88% 0.013 85);
+  --color-accent: oklch(70% 0.19 40); --color-accent-hover: oklch(66% 0.19 40); --color-accent-ink: oklch(18% 0.006 60); --color-accent-soft: oklch(91% 0.05 50); --color-focus: oklch(60% 0.19 40);
+  --color-accent-lit: oklch(85% 0.1 50); --color-accent-shade: oklch(58% 0.17 40); --color-accent-press: oklch(50% 0.15 40);
+  --color-green: oklch(48% 0.11 150); --color-green-soft: oklch(92% 0.04 150);
+  --color-grid: oklch(90% 0.014 85); --color-sheet: oklch(99.3% 0.004 85);
+  --color-replace: oklch(47% 0.13 250); --color-replace-soft: oklch(93% 0.03 250);
+  --color-disabled-fill: oklch(90% 0.012 85); --color-disabled-ink: oklch(48% 0.01 60);
+  --font-display: "Red Hat Display", "Red Hat Text", ui-sans-serif, sans-serif; --font-body: "Red Hat Text", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: "Red Hat Mono", ui-monospace, monospace;
+  --radius-card: 10px; --radius-entry: 14px; --radius-pill: 6px;
+  --shadow-card: 0 1px 2px oklch(18% 0.006 60 / 0.08), 0 14px 28px -16px oklch(18% 0.006 60 / 0.28);
+  --shadow-lift: 0 1px 1px oklch(18% 0.006 60 / 0.1), 0 2px 4px -1px oklch(18% 0.006 60 / 0.1), 0 24px 44px -20px oklch(18% 0.006 60 / 0.42);
+  --tracking-display: -0.035em; --display-weight: 600;
+}
+/* base.css */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { scrollbar-color: var(--color-muted) var(--color-paper); }
+::selection { background: var(--color-accent-soft); color: var(--color-ink); }
+body { caret-color: var(--color-accent); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); letter-spacing: var(--tracking-display); line-height: 1.05; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+
+/* page */
+.container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+.bar { border-bottom: 1px solid var(--color-ink); background: var(--color-paper); }
+.bar .container { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); min-height: 56px; }
+.wordmark { font: 600 var(--text-lg)/1 var(--font-display); letter-spacing: var(--tracking-display); }
+.bar p { color: var(--color-muted); font-size: var(--text-sm); }
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); padding-block: var(--space-xl) var(--space-2xl); }
+.intro { display: grid; gap: var(--space-xs); min-width: 0; }
+.intro h1 { font-size: var(--text-3xl); max-width: 26ch; }
+.intro p { color: var(--color-muted); max-width: 62ch; }
+
+/* composer */
+.composer { background: var(--color-paper-2); border: 1px solid var(--color-ink); border-radius: var(--radius-entry); box-shadow: var(--shadow-card); padding: var(--space-md); display: grid; gap: var(--space-sm); }
+.field { display: grid; gap: var(--space-2xs); background: var(--color-sheet); border: 1px solid var(--color-muted); border-radius: var(--radius-pill); padding: var(--space-xs) var(--space-sm); }
+.field:focus-within { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.field label { font-size: var(--text-sm); color: var(--color-muted); font-weight: 500; }
+.field textarea { border: 0; background: transparent; resize: vertical; min-height: 136px; font: 400 var(--text-md)/1.55 var(--font-outlier); color: var(--color-ink); outline: none; padding: 0; }
+.tries { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
+.tries span { font-size: var(--text-sm); color: var(--color-muted); }
+.chip-btn { min-height: 36px; padding: 0 var(--space-sm); border: 1px solid var(--color-rule); border-radius: var(--radius-pill); background: var(--color-paper-2); color: var(--color-ink); font: 400 var(--text-sm)/1 var(--font-outlier); cursor: pointer; transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
+.chip-btn:hover { border-color: var(--color-ink); background: var(--color-sheet); }
+.chip-btn:active { transform: translateY(1px); }
+.chip-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.chip-btn:disabled { background: var(--color-disabled-fill); color: var(--color-disabled-ink); cursor: not-allowed; transform: none; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 48px; padding: 0 var(--space-lg); border-radius: var(--radius-pill); font: 500 var(--text-md)/1 var(--font-body); cursor: pointer; border: 1px solid var(--color-ink); background: var(--color-accent); color: var(--color-accent-ink); box-shadow: inset 0 1px 0 var(--color-accent-lit), inset 0 -2px 0 var(--color-accent-shade); transition: background-color var(--dur-short) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
+.btn:hover { background: var(--color-accent-hover); }
+.btn:active { transform: translateY(1px); box-shadow: inset 0 1px 2px var(--color-accent-press); }
+.btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.btn:disabled, .btn[aria-busy="true"] { background: var(--color-disabled-fill); color: var(--color-disabled-ink); border-color: var(--color-rule); box-shadow: none; cursor: not-allowed; transform: none; }
+details.settings summary { cursor: pointer; font-size: var(--text-sm); font-weight: 500; color: var(--color-ink-2); min-height: 44px; display: inline-flex; align-items: center; gap: var(--space-xs); border-radius: var(--radius-pill); padding-inline: var(--space-xs); }
+details.settings summary:hover { color: var(--color-ink); background: var(--color-paper-3); }
+details.settings summary:active { background: var(--color-rule); }
+details.settings summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.settings-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); padding-top: var(--space-sm); border-top: 1px solid var(--color-rule); margin-top: var(--space-xs); }
+.seg { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-2xs); min-width: 0; }
+.seg legend { font-size: var(--text-sm); font-weight: 500; padding: 0; margin-bottom: var(--space-2xs); }
+.seg .opts { display: flex; flex-wrap: wrap; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg label { display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--space-sm); border: 1px solid var(--color-rule); margin-left: -1px; font-size: var(--text-sm); cursor: pointer; background: var(--color-sheet); transition: background-color var(--dur-short) var(--ease-out); }
+.seg label:first-of-type { border-radius: var(--radius-pill) 0 0 var(--radius-pill); margin-left: 0; }
+.seg label:last-of-type { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.seg label:hover { background: var(--color-paper-3); }
+.seg label:active { background: var(--color-rule); }
+.seg input:checked + label { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
+.seg input:focus-visible + label { outline: 2px solid var(--color-focus); outline-offset: 2px; position: relative; }
+.seg input:disabled + label { color: var(--color-disabled-ink); cursor: not-allowed; }
+.seg p { font-size: var(--text-xs); color: var(--color-muted); }
+
+/* result */
+.result { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: var(--space-lg); align-items: start; }
+.page { background: var(--color-sheet); border: 1px solid var(--color-rule); border-radius: var(--radius-card); min-height: 420px; display: grid; grid-template-rows: auto 1fr auto; }
+.page-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-rule); font-size: var(--text-sm); color: var(--color-muted); }
+.page-head b { color: var(--color-ink); font-weight: 500; }
+pre.code { margin: 0; padding: var(--space-md); max-height: 520px; overflow: auto; font: 400 var(--text-md)/1.65 var(--font-outlier); white-space: pre-wrap; word-break: break-word; color: var(--color-ink); }
+pre.code .p { color: var(--color-muted); }
+pre.code span[data-i] { cursor: pointer; border-radius: 3px; }
+pre.code span[data-i]:hover { outline: 1px solid var(--color-ink); }
+pre.code span.sel { outline: 2px solid var(--color-focus) !important; }
+.k-kept { background: var(--color-green-soft); }
+.k-own { box-shadow: inset 0 -2px 0 var(--color-replace); }
+.k-fresh { animation: land var(--dur-short) var(--ease-out); }
+@keyframes land { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+.caret { display: inline-block; width: 0.55em; height: 1.1em; vertical-align: -0.2em; background: var(--color-accent); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.key { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--color-rule); font-size: var(--text-sm); color: var(--color-muted); }
+.key span { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.sw { display: inline-block; width: 22px; height: 14px; border-radius: 3px; }
+.sw.kept { background: var(--color-green-soft); border: 1px solid var(--color-green); }
+.sw.own { border-bottom: 2px solid var(--color-replace); }
+.sw.prompt { background: var(--color-paper-3); }
+
+.how { display: grid; gap: var(--space-md); padding: var(--space-lg) var(--space-md); align-content: center; }
+.how h2 { font-size: var(--text-xl); }
+.how ol { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-md); counter-reset: s; }
+.how li { counter-increment: s; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--space-sm); align-items: start; max-width: 60ch; }
+.how li::before { content: counter(s); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-ink); font: 600 var(--text-sm)/1 var(--font-display); }
+.how li b { font-weight: 500; }
+.how li p { color: var(--color-muted); font-size: var(--text-sm); }
+
+.score { display: grid; gap: var(--space-md); }
+.verdict { background: var(--color-paper-2); border: 1px solid var(--color-ink); border-radius: var(--radius-entry); box-shadow: var(--shadow-lift); overflow: hidden; }
+.verdict-head { background: var(--color-ink); color: var(--color-paper); padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); display: flex; justify-content: space-between; gap: var(--space-sm); }
+.verdict-big { padding: var(--space-md); display: grid; gap: var(--space-2xs); }
+.verdict-big strong { font: 600 var(--text-4xl)/1 var(--font-display); letter-spacing: var(--tracking-display); font-variant-numeric: tabular-nums; }
+.verdict-big p { color: var(--color-muted); font-size: var(--text-sm); }
+.cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--color-ink); }
+.cells > div { padding: var(--space-sm) var(--space-md); display: grid; gap: var(--space-3xs); }
+.cells > div:nth-child(odd) { border-right: 1px solid var(--color-ink); }
+.cells > div:nth-child(n+3) { border-top: 1px solid var(--color-ink); }
+.cells span { font-size: var(--text-xs); color: var(--color-muted); }
+.cells b { font: 500 var(--text-lg)/1.1 var(--font-outlier); font-variant-numeric: tabular-nums; }
+.status { padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--color-ink); font-size: var(--text-sm); }
+.status.ok { background: var(--color-green-soft); color: var(--color-green); }
+.status.bad { background: var(--color-accent-soft); color: var(--color-error); }
+.narrate { background: var(--color-paper-2); border: 1px solid var(--color-rule); border-radius: var(--radius-card); padding: var(--space-md); display: grid; gap: var(--space-xs); }
+.narrate h2 { font-size: var(--text-md); }
+.tok { font: 400 var(--text-sm)/1.5 var(--font-outlier); white-space: pre; border-radius: 3px; padding: var(--space-3xs) var(--space-2xs); }
+.tok.kept { background: var(--color-green-soft); color: var(--color-green); }
+.tok.no { background: var(--color-accent-soft); color: var(--color-ink); text-decoration: line-through; }
+.tok.own { background: var(--color-replace-soft); color: var(--color-replace); }
+
+/* tabs */
+.tabs { background: var(--color-paper-2); border: 1px solid var(--color-rule); border-radius: var(--radius-card); }
+.tablist { display: flex; flex-wrap: wrap; gap: var(--space-2xs); padding: var(--space-xs) var(--space-xs) 0; border-bottom: 1px solid var(--color-rule); }
+.tablist button { min-height: 44px; padding: 0 var(--space-md); border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--color-muted); font: 500 var(--text-sm)/1 var(--font-body); cursor: pointer; transition: color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
+.tablist button:hover { color: var(--color-ink); }
+.tablist button:active { transform: translateY(1px); }
+.tablist button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.tablist button[aria-selected="true"] { color: var(--color-ink); border-bottom-color: var(--color-accent); }
+.tabpanel { padding: var(--space-md); }
+p.empty { color: var(--color-muted); font-size: var(--text-sm); }
+.rounds { display: grid; max-height: 320px; overflow: auto; }
+.rounds div { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs) var(--space-xs); padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-rule); font-size: var(--text-sm); }
+.rounds div > span:first-child { min-width: 64px; color: var(--color-muted); }
+.rounds .cyc { margin-left: auto; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.core { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-lg); }
+.core h3, .inspect h3 { font-size: var(--text-md); }
+.core p { color: var(--color-muted); font-size: var(--text-sm); max-width: 60ch; }
+.lanes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--space-2xs); margin-block: var(--space-sm); }
+.lanes div { height: 40px; border-radius: var(--radius-pill); border: 1px solid var(--color-rule); background: var(--color-paper-3); display: grid; place-items: center; font-size: var(--text-xs); color: var(--color-muted); }
+.lanes div.on { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
+.bars { display: grid; gap: var(--space-xs); margin-top: var(--space-sm); }
+.bars div { display: grid; grid-template-columns: 140px minmax(0, 1fr) 72px; gap: var(--space-sm); align-items: center; font-size: var(--text-sm); }
+.track { height: 10px; background: var(--color-paper-3); border-radius: 2px; overflow: hidden; }
+.fill { height: 100%; background: var(--color-ink); transform-origin: left; }
+.fill.d { background: var(--color-accent); }
+.bars span:last-child { text-align: right; font: 400 var(--text-sm)/1 var(--font-outlier); }
+.cands { display: grid; gap: var(--space-2xs); margin-top: var(--space-xs); }
+.cand { display: grid; grid-template-columns: 140px minmax(0, 1fr) 60px; gap: var(--space-sm); align-items: center; font-size: var(--text-sm); }
+.cand code { font: 400 var(--text-sm)/1.4 var(--font-outlier); white-space: pre; overflow: hidden; text-overflow: ellipsis; background: var(--color-paper-3); border-radius: 3px; padding: 0 var(--space-2xs); }
+.cand.pick code { background: var(--color-ink); color: var(--color-paper); }
+.cand .fill { background: var(--color-replace); }
+.cand.d .fill { background: var(--color-accent); }
+.cand span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.inspect { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-lg); }
+.inspect-who { grid-column: 1 / -1; }
+
+.offline { background: var(--color-accent-soft); border: 1px solid var(--color-ink); border-radius: var(--radius-card); padding: var(--space-md); }
+.offline code { font-family: var(--font-outlier); }
+.about { color: var(--color-muted); font-size: var(--text-sm); max-width: 75ch; }
+.about summary { cursor: pointer; font-weight: 500; color: var(--color-ink-2); min-height: 44px; display: inline-flex; align-items: center; }
+.about summary:hover { color: var(--color-ink); }
+.about summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.about p + p { margin-top: var(--space-xs); }
+
+@media (max-width: 60rem) {
+  :root { --gutter: 20px; }
+  .bar p { display: none; }
+  .result, .core, .inspect { grid-template-columns: minmax(0, 1fr); }
+  .settings-body { grid-template-columns: minmax(0, 1fr); }
+  .intro h1 { font-size: var(--text-2xl); }
+}
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } .k-fresh { animation: none; } }
+</style></head>
+<body>
+<header class="bar"><div class="container"><span class="wordmark">SpecCore</span><p>Live demo, running on this laptop</p></div></header>
+
+<main class="container">
+  <div class="intro">
+    <h1>Watch a small model write Python by guessing ahead</h1>
+    <p>A tiny draft model guesses the next few tokens. The bigger model checks all of them at once and keeps the ones it agrees with. The code comes out the same, with fewer slow passes.</p>
+  </div>
+
+  <div class="offline" id="offline" hidden>The demo server is not running. In the SpecCore folder run <code>python tools/live_demo.py</code>; it opens this page for you.</div>
+
+  <section class="composer" aria-label="Your prompt">
+    <div class="field">
+      <label for="prompt">Start some Python</label>
+      <textarea id="prompt" spellcheck="false">import numpy as np
+
+
+def normalize(x):
+</textarea>
+    </div>
+    <div class="tries" id="examples"><span>Or try</span></div>
+    <div class="actions">
+      <details class="settings" id="settings">
+        <summary>Settings</summary>
+        <div class="settings-body">
+          <fieldset class="seg"><legend>Guesses per round</legend>
+            <div class="opts">
+              <input type="radio" name="mode" id="m1" value="g1"><label for="m1">1</label>
+              <input type="radio" name="mode" id="m2" value="g2" checked><label for="m2">2</label>
+              <input type="radio" name="mode" id="m3" value="g3"><label for="m3">3</label>
+              <input type="radio" name="mode" id="m4" value="g4"><label for="m4">4</label>
+              <input type="radio" name="mode" id="mg" value="gate"><label for="mg">Auto</label>
+            </div>
+            <p>Auto keeps guessing while the draft is confident, up to 4.</p>
+          </fieldset>
+          <fieldset class="seg"><legend>Length</legend>
+            <div class="opts">
+              <input type="radio" name="len" id="l1" value="40"><label for="l1">Short</label>
+              <input type="radio" name="len" id="l2" value="80" checked><label for="l2">Medium</label>
+              <input type="radio" name="len" id="l3" value="112"><label for="l3">Long</label>
+            </div>
+            <p>40, 80 or 112 new tokens.</p>
+          </fieldset>
+          <fieldset class="seg"><legend>Playback</legend>
+            <div class="opts">
+              <input type="radio" name="pace" id="p1" value="450"><label for="p1">Slow</label>
+              <input type="radio" name="pace" id="p2" value="140" checked><label for="p2">Normal</label>
+              <input type="radio" name="pace" id="p3" value="0"><label for="p3">Instant</label>
+            </div>
+            <p>Slow lets you follow each round.</p>
+          </fieldset>
+        </div>
+      </details>
+      <button class="btn" id="go" type="button">Write the rest</button>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="page">
+      <div class="page-head"><b>Output</b><span id="page-meta">Nothing written yet</span></div>
+      <div class="how" id="how">
+        <h2>How one round works</h2>
+        <ol>
+          <li><div><b>The draft guesses ahead.</b><p>The small model (0.66M parameters) proposes the next 2 tokens. It is cheap to run.</p></div></li>
+          <li><div><b>The big model checks every guess in one pass.</b><p>On SpecCore one read of the weights serves all the guesses together, so checking two costs far less than writing two.</p></div></li>
+          <li><div><b>Agreed guesses are kept.</b><p>At the first disagreement the big model’s own token is used instead, so the result is exactly what the big model would write alone.</p></div></li>
+        </ol>
+      </div>
+      <pre class="code" id="out" hidden></pre>
+      <div class="key">
+        <span><i class="sw prompt"></i>your prompt</span>
+        <span><i class="sw kept"></i>guess kept</span>
+        <span><i class="sw own"></i>big model’s own token</span>
+        <span>Click any token for details</span>
+      </div>
+    </div>
+
+    <div class="score">
+      <div class="verdict">
+        <div class="verdict-head"><span>Speed on SpecCore</span><span id="v-state">waiting</span></div>
+        <div class="verdict-big"><strong id="spd">Ready</strong><p id="spd-note">The speedup appears here while the code is written.</p></div>
+        <div class="cells">
+          <div><span>Tokens per big-model pass</span><b id="tpp">0.00</b></div>
+          <div><span>Guesses kept</span><b id="acc">0 of 0</b></div>
+          <div><span>Core time, guessing</span><b id="t-spec">0 ms</b></div>
+          <div><span>Core time, alone</span><b id="t-plain">0 ms</b></div>
+        </div>
+        <div class="status" id="status" hidden></div>
+      </div>
+      <div class="narrate">
+        <h2>Latest round</h2>
+        <p id="narr">Press Write the rest to start.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs">
+    <div class="tablist" role="tablist" aria-label="Details">
+      <button type="button" role="tab" id="tab-rounds" aria-controls="pan-rounds" aria-selected="true">Round by round</button>
+      <button type="button" role="tab" id="tab-core" aria-controls="pan-core" aria-selected="false" tabindex="-1">Inside the core</button>
+      <button type="button" role="tab" id="tab-tok" aria-controls="pan-tok" aria-selected="false" tabindex="-1">Token details</button>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="pan-rounds" aria-labelledby="tab-rounds"><p class="empty" id="rounds-empty">Each round will be listed here: what the draft guessed, what was kept and what the big model added.</p><div class="rounds" id="log"></div></div>
+    <div class="tabpanel" role="tabpanel" id="pan-core" aria-labelledby="tab-core" hidden>
+      <div class="core">
+        <div>
+          <h3 id="lane-h">The LLM unit’s 8 lanes</h3>
+          <div class="lanes" id="lanes"></div>
+          <p>Each lane holds one token. In a checking pass every weight read from memory is multiplied against all the active lanes in the same cycle, so the lanes share the expensive part.</p>
+        </div>
+        <div>
+          <h3 id="cost-h">Cycles in the latest round</h3>
+          <div class="bars" id="costs"><p class="empty">Shown once a round has run.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="pan-tok" aria-labelledby="tab-tok" hidden><p class="empty" id="tok-empty">Click any generated token in the output to see the big model’s top 5 choices there and what the draft had guessed.</p><div class="inspect" id="insp" hidden></div></div>
+  </section>
+
+  <details class="about">
+    <summary>About these numbers</summary>
+    <p>The models, tokens, guesses and probabilities are real. They come from the integer versions of both models, which use exactly the arithmetic of the SpecCore RTL; on every prompt simulated on the core it produced the same tokens. The core’s RTL itself is not running here: cycle-accurate simulation takes about 2 minutes per token.</p>
+    <p>Speed: each pass is charged the cycles measured for it on the core in simulation (Vivado xsim), with the attention part scaled with context length (an estimate). Time assumes the core’s 122.7 MHz clock. After every run the big model also writes the text alone, and the page checks the two are identical.</p>
+    <p>The models are small (5.2M and 0.66M parameters, trained on Python from scratch), so the code looks right in style but is often wrong and can repeat itself. Repeats are easy to guess, so they push the speedup up.</p>
+  </details>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const show = s => s.replace(/\n/g, "⏎").replace(/ /g, "␣");
+const M = c => c >= 1e9 ? (c / 1e9).toFixed(2) + "G" : (c / 1e6).toFixed(1) + "M";
+const pick = name => document.querySelector(`input[name="${name}"]:checked`).value;
+const EX = ["import numpy as np\n\n\ndef normalize(x):\n", "import os\n\ndef list_files(path):\n", "def read_json(path):\n    with open(path) as f:\n", "class Stack:\n    def __init__(self):\n", "def add(a, b):\n    return"];
+EX.forEach(e => { const b = document.createElement("button"); b.type = "button"; b.className = "chip-btn";
+  b.textContent = (e.split("\n").find(l => /^(def|class) /.test(l)) || e).trim();
+  b.onclick = () => { $("prompt").value = e; $("go").focus(); }; $("examples").appendChild(b); });
+for (let i = 0; i < 8; i++) { const d = document.createElement("div"); d.textContent = "lane " + i; $("lanes").appendChild(d); }
+
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(t) { tabs.forEach(x => { const on = x === t; x.setAttribute("aria-selected", on); x.tabIndex = on ? 0 : -1; $(x.getAttribute("aria-controls")).hidden = !on; }); }
+tabs.forEach((t, i) => { t.onclick = () => selectTab(t); t.onkeydown = e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; selectTab(n); n.focus(); } }; });
+
+let es = null, queue = [], timer = null, st, toks = [], prompt = [], pieces = {}, mhz = 122.7, sel = null, lastAdded = 0;
+function reset() {
+  toks = []; queue = []; st = { rounds: 0, acc: 0, prop: 0, cyc: 0, plain: 0 }; sel = null; lastAdded = 0;
+  $("log").innerHTML = ""; $("rounds-empty").hidden = false; $("status").hidden = true;
+  $("insp").hidden = true; $("tok-empty").hidden = false; $("spd").textContent = "1.00×"; $("spd-note").textContent = "faster than the big model writing alone, on the same core";
+  $("tpp").textContent = "0.00"; $("acc").textContent = "0 of 0"; $("t-spec").textContent = "0 ms"; $("t-plain").textContent = "0 ms";
+}
+function renderOut(running) {
+  let h = `<span class="p">${esc(prompt.map(p => p[1]).join(""))}</span>`;
+  h += toks.map((t, i) => `<span data-i="${i}" class="${t.kind === "acc" ? "k-kept" : "k-own"}${running && i >= toks.length - lastAdded ? " k-fresh" : ""}${sel === i ? " sel" : ""}">${esc(pieces[t.t] ?? "?")}</span>`).join("");
+  if (running) h += `<span class="caret"></span>`;
+  const o = $("out"); o.innerHTML = h; o.scrollTop = o.scrollHeight;
+  $("page-meta").textContent = `${toks.length} tokens written`;
+}
+$("out").onclick = e => { const s = e.target.closest("span[data-i]"); if (!s) return; sel = +s.dataset.i; inspect(sel); renderOut(false); selectTab($("tab-tok")); };
+function bars(list, cls, chosen) { return `<div class="cands">` + list.map(([t, p]) => `<div class="cand ${cls}${t === chosen ? " pick" : ""}"><code>${esc(show(pieces[t] ?? "?"))}</code><div class="track"><div class="fill" style="transform:scaleX(${p.toFixed(3)})"></div></div><span>${(p * 100).toFixed(1)}%</span></div>`).join("") + `</div>`; }
+function inspect(i) {
+  const t = toks[i];
+  const who = t.kind === "acc" ? "a guess from the draft model, kept because the big model agreed"
+    : t.rejected != null ? `the big model’s own token; the draft had guessed <span class="tok no">${esc(show(pieces[t.rejected]))}</span> here`
+    : "the big model’s own token, added after it agreed with every guess in the round";
+  let h = `<p class="inspect-who"><span class="tok ${t.kind === "acc" ? "kept" : "own"}">${esc(show(pieces[t.t]))}</span> is ${who} (round ${t.round}).</p>`;
+  h += `<div><h3>Big model’s top 5 here</h3>${bars(t.target, "", t.t)}</div>`;
+  h += t.draft ? `<div><h3>Draft model’s top 3 here</h3>${bars(t.draft.top, "d", t.draft.top[0][0])}</div>` : `<div><h3>Draft model</h3><p class="empty">The draft made no guess for this position.</p></div>`;
+  $("insp").innerHTML = h; $("insp").hidden = false; $("tok-empty").hidden = true;
+}
+function sentence(r) {
+  const g = r.guesses.length, fix = `<span class="tok own">${esc(show(pieces[r.fix]))}</span>`;
+  const gs = r.guesses.map((t, i) => `<span class="tok ${i < r.n_ok ? "kept" : "no"}">${esc(show(pieces[t]))}</span>`).join(" ");
+  if (!g) return `The draft was not confident enough to guess, so the big model wrote ${fix} itself.`;
+  if (r.n_ok === g) return `The draft guessed ${gs}. The big model agreed with ${g === 1 ? "it" : "all " + g} and added ${fix}: ${g + 1} tokens from one pass.`;
+  if (r.n_ok === 0) return `The draft guessed ${gs}. The big model disagreed with the first guess and wrote ${fix} instead.`;
+  return `The draft guessed ${gs}. The big model kept ${r.n_ok}, then wrote ${fix} where it disagreed.`;
+}
+function apply(r) {
+  Object.assign(pieces, r.pieces);
+  st.rounds++; st.acc += r.n_ok; st.prop += r.guesses.length; st.cyc = r.cycles; st.plain = r.plain_cycles;
+  const before = toks.length;
+  r.guesses.slice(0, r.n_ok).forEach((t, i) => toks.push({ t, kind: "acc", round: st.rounds, target: r.target[i], draft: r.draft[i] }));
+  const rej = r.n_ok < r.guesses.length;
+  toks.push({ t: r.fix, kind: "own", round: st.rounds, target: r.target[r.n_ok], draft: rej ? r.draft[r.n_ok] : null, rejected: rej ? r.guesses[r.n_ok] : null });
+  lastAdded = toks.length - before;
+  $("narr").innerHTML = sentence(r);
+  const row = document.createElement("div");
+  row.innerHTML = `<span>Round ${st.rounds}</span><span>${sentence(r)}</span><span class="cyc">${M(r.draft_cycles + r.verify.total)} cycles</span>`;
+  $("log").prepend(row); $("rounds-empty").hidden = true;
+  $("spd").textContent = (st.plain / st.cyc).toFixed(2) + "×";
+  $("tpp").textContent = (toks.length / st.rounds).toFixed(2);
+  $("acc").textContent = `${st.acc} of ${st.prop}`;
+  $("t-spec").textContent = (st.cyc / (mhz * 1e3)).toFixed(0) + " ms"; $("t-plain").textContent = (st.plain / (mhz * 1e3)).toFixed(0) + " ms";
+  [...$("lanes").children].forEach((x, i) => x.className = i < r.K ? "on" : "");
+  $("lane-h").textContent = `The LLM unit’s 8 lanes: ${r.K} in use for the latest check`;
+  const names = { matvec: "Weights × tokens", attn: "Attention", normq: "Norms and rescaling", other: "Other" };
+  const mx = Math.max(...Object.keys(names).map(k => r.verify[k]), r.draft_cycles, 1);
+  $("cost-h").textContent = `Cycles in round ${st.rounds} (context ${r.ctx} tokens)`;
+  $("costs").innerHTML = Object.keys(names).map(k => `<div><span>${names[k]}</span><div class="track"><div class="fill" style="transform:scaleX(${(r.verify[k] / mx).toFixed(3)})"></div></div><span>${M(r.verify[k])}</span></div>`).join("")
+    + `<div><span>Draft guesses</span><div class="track"><div class="fill d" style="transform:scaleX(${(r.draft_cycles / mx).toFixed(3)})"></div></div><span>${M(r.draft_cycles)}</span></div>`;
+  renderOut(true);
+}
+function finish(d) {
+  lastAdded = 0; renderOut(false); busy(false);
+  $("v-state").textContent = "done";
+  const s = $("status"); s.hidden = false; s.className = "status " + (d.identical ? "ok" : "bad");
+  s.textContent = d.identical ? "Same text as the big model writing alone, checked token by token." : "The text differs from the big model alone. That would be a bug.";
+}
+function pump() { if (!queue.length) { timer = null; return; } const ev = queue.shift(); ev.type === "round" ? apply(ev.data) : finish(ev.data); timer = setTimeout(pump, +pick("pace")); }
+function push(type, data) { queue.push({ type, data }); if (!timer) pump(); }
+function busy(on) { const b = $("go"); b.disabled = on; b.setAttribute("aria-busy", on); b.textContent = on ? "Writing…" : "Write the rest"; document.querySelectorAll(".chip-btn").forEach(x => x.disabled = on); }
+function fail(msg) { busy(false); $("v-state").textContent = "stopped"; const s = $("status"); s.hidden = false; s.className = "status bad"; s.textContent = msg; }
+$("go").onclick = () => {
+  if (es) es.close(); clearTimeout(timer); timer = null; reset(); busy(true);
+  $("how").hidden = true; $("out").hidden = false; $("v-state").textContent = "writing";
+  const q = new URLSearchParams({ prompt: $("prompt").value, mode: pick("mode"), n: pick("len") });
+  es = new EventSource("/generate?" + q);
+  es.addEventListener("start", e => { const d = JSON.parse(e.data); prompt = d.prompt; mhz = d.mhz; prompt.forEach(([t, p]) => pieces[t] = p); renderOut(true); });
+  es.addEventListener("round", e => push("round", JSON.parse(e.data)));
+  es.addEventListener("done", e => { push("done", JSON.parse(e.data)); es.close(); es = null; });
+  es.addEventListener("fail", e => { fail(JSON.parse(e.data).msg); es.close(); es = null; });
+  es.onerror = () => { if (es) { es.close(); es = null; if (!toks.length) { $("offline").hidden = false; fail("Could not reach the demo server."); } } };
+};
+$("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("go").click(); });
+if (location.protocol === "file:") $("offline").hidden = false;
+else if (new URLSearchParams(location.search).has("auto")) $("go").click();
+</script>
+</body></html>

@@ -1,0 +1,66 @@
+# SpecCore control panel: every project decision lives here, once.
+#   python tools/sc.py show   -> decisions + derived numbers (sizes, cycles, speedup estimate)
+#   python tools/sc.py gen    -> regenerate the C and Verilog headers from this file
+# Ids in comments (D1, O1, D12 ...) point to docs/review/decisions.md and isa_options.md.
+
+[tokenizer]                 # D2
+vocab = 2048
+dir = "model/tokenizer/bpe2048"
+eot_id = 0
+
+[draft]                     # D1
+dim = 128
+layers = 2
+heads = 4
+ctx = 128
+mlp_mult = 4                # MLP hidden = mlp_mult * dim, ReLU
+
+[target]                    # D1
+dim = 256
+layers = 6
+heads = 8
+ctx = 128
+mlp_mult = 4
+
+[train]
+draft_hours = 1.5
+target_hours = 2.0
+batch = 64
+tokens_per_param = 20
+
+[quant]                     # D4, D5
+weight_bits = 8
+act_bits = 8
+act_scale = "per_token"     # D4: per_token | group | fixed
+scale_format = "mult_shift" # D5: int32 multiplier + right shift
+
+[spec]
+gamma = 4                   # guesses per round; verify width K = gamma + 1
+k_sweep = [2, 4, 8]         # K values for the final sweep
+predictor = "fixed"         # D12 (pending): fixed | bimodal | gshare | perceptron | tage
+
+[hw]
+clock_mhz = 100
+lanes = 8                   # max K in hardware; each lane = 4 int8 multipliers
+weight_port_bits = 32
+mul = "dsp"                 # D8: dsp | mcycle
+dmem = "addr_from_E"        # D7: addr_from_E | extra_cycle
+attention = "software"      # D9: software | kv_stream (kv_stream needs isa.setsrc)
+kv_v_transposed = true      # store V transposed from day one so O1 can plug in later
+
+[isa]                       # custom-0 opcode; add-ons start off and are switched on as experiments
+vdotk = true                # base: SETK SETP ACCRD VDOTK WPOP
+setsrc = false              # O1 KV streaming
+accq = false                # O2 fused readout
+vresolve = false            # O3 = I1 token resolve unit (picked 12 Nov; build after the base works)
+vdotk4 = false              # O4 int4 weights
+
+[isa.funct3]                # encoding (plan v3 ISA table); SDOT4 (010) dropped in D3
+setk = 0
+setp = 1
+accrd = 3
+vdotk = 4
+wpop = 5
+
+[mmio]
+cycle_counter = 0xFFFF00A0

@@ -1,0 +1,20 @@
+[
+  {
+    "vocab": 1024,
+    "chars_per_token": 2.21,
+    "draft_out_layer_KB": 128,
+    "target_out_layer_KB": 256
+  },
+  {
+    "vocab": 2048,
+    "chars_per_token": 2.539,
+    "draft_out_layer_KB": 256,
+    "target_out_layer_KB": 512
+  },
+  {
+    "vocab": 4096,
+    "chars_per_token": 2.84,
+    "draft_out_layer_KB": 512,
+    "target_out_layer_KB": 1024
+  }
+]

@@ -1,0 +1,161 @@
+ID 0x5c0e0003 (want 0x5c0e0003)
+image 6,897,200 B at phys 0x38100000
+loaded IROM 1251 words, DMEM 52 words (0.9 s), readback mismatches 0
+accq macro 0 2
+accq lw d1 0 -1
+accq lw d2 0 1
+accq mul d1 0 2
+accq fwd 0 12342
+accq macro 1 -101
+accq lw d1 1 -115
+accq lw d2 1 73
+accq mul d1 1 -41
+accq fwd 1 12211
+accq macro 2 -36362
+accq lw d1 2 149329
+accq lw d2 2 -9959
+accq mul d1 2 -149780
+accq fwd 2 6818
+accq macro 3 -7
+accq lw d1 3 -1
+accq lw d2 3 3
+accq mul d1 3 1
+accq fwd 3 12344
+accq macro 4 -46973439
+accq lw d1 4 187295860
+accq lw d2 4 81891040
+accq mul d1 4 -89377617
+accq fwd 4 34996952
+accq macro 5 736741
+accq lw d1 5 1539950
+accq lw d2 5 5296266
+accq mul d1 5 -6794313
+accq fwd 5 905863
+accq macro 6 0
+accq lw d1 6 0
+accq lw d2 6 0
+accq mul d1 6 0
+accq fwd 6 12345
+accq macro 7 247278440
+accq lw d1 7 403633066
+accq lw d2 7 -412302404
+accq mul d1 7 -402308754
+accq fwd 7 435956167
+accq macro 8 -393420124
+accq lw d1 8 1134998048
+accq lw d2 8 -1555524713
+accq mul d1 8 1722121669
+accq fwd 8 -288697305
+accq macro 9 267726
+accq lw d1 9 -279979
+accq lw d2 9 -90230
+accq mul d1 9 409121
+accq fwd 9 421001
+accq macro 10 0
+accq lw d1 10 0
+accq lw d2 10 0
+accq mul d1 10 0
+accq fwd 10 12345
+accq macro 11 -20180
+accq lw d1 11 -4505
+accq lw d2 11 454527
+accq mul d1 11 -98086
+accq fwd 11 -124624
+accq macro 12 198049
+accq lw d1 12 120295
+accq lw d2 12 -167426
+accq mul d1 12 -48991
+accq fwd 12 -114157
+accq macro 13 0
+accq lw d1 13 0
+accq lw d2 13 0
+accq mul d1 13 0
+accq fwd 13 12345
+accq macro 14 1224
+accq lw d1 14 2495
+accq lw d2 14 -705
+accq mul d1 14 1253
+accq fwd 14 12160
+accq macro 15 -7
+accq lw d1 15 -21
+accq lw d2 15 -22
+accq mul d1 15 20
+accq fwd 15 12343
+accq macro 16 708
+accq lw d1 16 -1667
+accq lw d2 16 -479
+accq mul d1 16 909
+accq fwd 16 11621
+accq macro 17 4259129
+accq lw d1 17 9688180
+accq lw d2 17 6884297
+accq mul d1 17 -11871471
+accq fwd 17 -5331697
+accq macro 18 -25
+accq lw d1 18 1
+accq lw d2 18 -13
+accq mul d1 18 -10
+accq fwd 18 12337
+accq macro 19 0
+accq lw d1 19 0
+accq lw d2 19 0
+accq mul d1 19 0
+accq fwd 19 12345
+accq macro 20 0
+accq lw d1 20 0
+accq lw d2 20 0
+accq mul d1 20 0
+accq fwd 20 12345
+accq macro 21 0
+accq lw d1 21 0
+accq lw d2 21 0
+accq mul d1 21 0
+accq fwd 21 12345
+accq macro 22 -1231
+accq lw d1 22 -18996
+accq lw d2 22 9875
+accq mul d1 22 -25404
+accq fwd 22 29904
+accq macro 23 20
+accq lw d1 23 -10
+accq lw d2 23 7
+accq mul d1 23 -4
+accq fwd 23 12348
+sets->accq 0 4
+vdotr->accq 0 0
+accq b2b first 0 -2
+accq b2b second 0 0
+sets->accq 1 -12548
+vdotr->accq 1 -1359
+accq b2b first 1 9971
+accq b2b second 1 0
+sets->accq 2 0
+vdotr->accq 2 0
+accq b2b first 2 0
+accq b2b second 2 0
+sets->accq 3 0
+vdotr->accq 3 0
+accq b2b first 3 0
+accq b2b second 3 0
+sets->accq 4 0
+vdotr->accq 4 0
+accq b2b first 4 0
+accq b2b second 4 0
+sets->accq 5 -1186943
+vdotr->accq 5 -4307440
+accq b2b first 5 119273
+accq b2b second 5 0
+sets->accq 6 1170817
+vdotr->accq 6 895791
+accq b2b first 6 -2899800
+accq b2b second 6 0
+sets->accq 7 -71
+vdotr->accq 7 -52
+accq b2b first 7 -76
+accq b2b second 7 0
+accq lane7 K1 0 -31134
+accq clears 0 0
+ACCQ TEST PASS 154 checks
+EXIT 0 | core cycles 140,856 | wall cycles 140,876 (stream wait 19, load wait 0)
+RESULT {"exit": 0, "done": true, "core_cycles": 140856, "wall_cycles": 140876, "stream_wait": 19, "load_wait": 0, "load_misses": 0, "stream_restarts": 0, "host_seconds": 0.01, "bp": false}
+AFI_FS restored to 0x0

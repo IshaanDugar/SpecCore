@@ -1,0 +1,45 @@
+ID 0x5c0e0003 (want 0x5c0e0003)
+image 6,897,200 B at phys 0x38100000
+loaded IROM 5308 words, DMEM 270 words (0.9 s), readback mismatches 0
+draft tok 890 lsum_lo fe213bfc ok
+draft tok 310 lsum_lo fd965ca6 ok
+draft tok 77 lsum_lo fe033256 ok
+draft tok 358 lsum_lo fdccb94a ok
+draft tok 310 lsum_lo fdfa6077 ok
+draft tok 1936 lsum_lo fdfe1b12 ok
+draft tok 221 lsum_lo fd8ea14c ok
+draft tok 267 lsum_lo ff2b8302 ok
+draft tok 1015 lsum_lo fe4fbc53 ok
+draft tok 890 lsum_lo fe2c4c62 ok
+draft tok 14 lsum_lo fd7461f7 ok
+draft tok 199 lsum_lo fdde8f94 ok
+draft tok 3 lsum_lo fdb0b190 ok
+draft tok 406 lsum_lo fda388d8 ok
+draft tok 380 lsum_lo fdc3f3b5 ok
+draft tok 63 lsum_lo fcdff738 ok
+cycles draft per step: matvec 602853 attn 100492 normq 69860 other 17622 total 790827 (ctx 23)
+cycles plain draft total 12457657
+target tok 890 lsum_lo fe650e0f ok
+target tok 310 lsum_lo fd441f5e ok
+target tok 77 lsum_lo fdb64b8f ok
+target tok 358 lsum_lo fda6e7c8 ok
+target tok 310 lsum_lo fda240a4 ok
+target tok 221 lsum_lo fdc0aa7d ok
+target tok 267 lsum_lo fec6cb62 ok
+target tok 1015 lsum_lo feee52bf ok
+target tok 890 lsum_lo fe6333a0 ok
+target tok 14 lsum_lo fd3f3cbe ok
+target tok 199 lsum_lo fdb91eba ok
+target tok 267 lsum_lo fe55fad0 ok
+target tok 1015 lsum_lo ff5d22cf ok
+target tok 890 lsum_lo fee7c648 ok
+target tok 63 lsum_lo fe21e1cd ok
+target tok 267 lsum_lo fe6d8685 ok
+cycles target per step: matvec 2940699 attn 600453 normq 371573 other 89398 total 4002123 (ctx 23)
+cycles plain target total 62697052
+spec gamma 2: rounds 6 accepted 10 catchup 5 ok
+cycles spec total 51149959 draft 10250429 verify 40899124
+REF PASS
+EXIT 0 | core cycles 160,329,090 | wall cycles 182,133,205 (stream wait 18,295, load wait 21,785,819)
+RESULT {"exit": 0, "done": true, "core_cycles": 160329090, "wall_cycles": 182133205, "stream_wait": 18295, "load_wait": 21785819, "load_misses": 1015752, "stream_restarts": 861, "host_seconds": 3.647, "bp": true}
+AFI_FS restored to 0x0

@@ -1,0 +1,23 @@
+# Vivado / xsim outputs
+*.cache/
+*.hw/
+*.runs/
+*.sim/
+*.gen/
+*.ip_user_files/
+.Xil/
+*.jou
+*.log
+*.wdb
+*.dcp
+*.bit
+*.hwh
+# Python / training
+__pycache__/
+*.pyc
+.venv/
+data/
+*.pt
+*.bin
+wandb/
+build/

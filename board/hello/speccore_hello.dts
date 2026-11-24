@@ -1,0 +1,41 @@
+/* Device-tree overlay for the hello app (compiled on the board with dtc -@).
+   Same structure as the stock k26-starter-kits overlay: load the bitstream into fpga_full,
+   release the PL resets, set PL clock 0 to 100 MHz, and expose the two AXI slaves as UIO devices
+   (the board kernel binds "generic-uio": uio_pdrv_genirq.of_id=generic-uio on its command line).
+   Addresses must match build/board/hello/address_map.txt (checked by tools/board_build.py). */
+/dts-v1/;
+/plugin/;
+/ {
+    fragment@0 {
+        target = <&fpga_full>;
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            firmware-name = "speccore_hello.bit.bin";
+            resets = <&zynqmp_reset 116>, <&zynqmp_reset 117>, <&zynqmp_reset 118>, <&zynqmp_reset 119>;
+        };
+    };
+    fragment@1 {
+        target = <&amba>;
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            speccore_clk0: speccore_clk0 {
+                compatible = "xlnx,fclk";
+                #clock-cells = <0>;
+                clocks = <&zynqmp_clk 71>;
+                assigned-clocks = <&zynqmp_clk 71>;
+                assigned-clock-rates = <100000000>;
+                clock-output-names = "speccore_pl0";
+            };
+            speccore_bram@a0000000 {
+                compatible = "generic-uio";
+                reg = <0x0 0xa0000000 0x0 0x2000>;
+            };
+            speccore_id@a0010000 {
+                compatible = "generic-uio";
+                reg = <0x0 0xa0010000 0x0 0x10000>;
+            };
+        };
+    };
+};

@@ -1,0 +1,29 @@
+ID 0x5c0e0003 (want 0x5c0e0003)
+image 6,897,200 B at phys 0x38100000
+loaded IROM 5294 words, DMEM 238 words (0.9 s), readback mismatches 0
+draft tok 1192 lsum_lo fddb0e36 ok
+draft tok 309 lsum_lo fcb8e313 ok
+draft tok 626 lsum_lo fe103618 ok
+draft tok 796 lsum_lo fe519f66 ok
+draft tok 1768 lsum_lo fe240e41 ok
+draft tok 8 lsum_lo fda7ab67 ok
+draft tok 1235 lsum_lo fe6e837a ok
+draft tok 300 lsum_lo fd4a30a1 ok
+cycles draft per step: matvec 603476 attn 100144 normq 69687 other 17622 total 790929 (ctx 23)
+cycles plain draft total 6284190
+target tok 1192 lsum_lo fdc249f6 ok
+target tok 309 lsum_lo fda9dea2 ok
+target tok 626 lsum_lo feb4d403 ok
+target tok 796 lsum_lo fec57c24 ok
+target tok 1768 lsum_lo ff1eaf65 ok
+target tok 8 lsum_lo fe7e0714 ok
+target tok 814 lsum_lo fe3c9b71 ok
+target tok 63 lsum_lo fe1f0c00 ok
+cycles target per step: matvec 2922778 attn 599936 normq 371887 other 89398 total 3983999 (ctx 23)
+cycles plain target total 31644706
+spec gamma 2: rounds 4 accepted 4 catchup 2 ok
+cycles spec total 29462598 draft 4782843 verify 24679506
+REF PASS
+EXIT 0 | core cycles 139,902,952 | wall cycles 159,746,075 (stream wait 11,792, load wait 19,831,330)
+RESULT {"exit": 0, "done": true, "core_cycles": 139902952, "wall_cycles": 159746075, "stream_wait": 11792, "load_wait": 19831330, "load_misses": 938013, "stream_restarts": 553, "host_seconds": 3.204, "bp": true}
+AFI_FS restored to 0x0

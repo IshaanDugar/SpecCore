@@ -1,0 +1,36 @@
+/* Device-tree overlay for the core app (D16 option D: SpecCore RV core + LLM unit on the board).
+   Same structure as speccore_dma.dts: load the bitstream, release the PL resets, PL clock 0 = 50 MHz,
+   one UIO device = the sc_board AXI-Lite window (registers, IROM, console, DMEM; 2 MB).
+   Address must match build/board/core/address_map.txt (checked by tools/board_build.py). */
+/dts-v1/;
+/plugin/;
+/ {
+    fragment@0 {
+        target = <&fpga_full>;
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            firmware-name = "speccore_core.bit.bin";
+            resets = <&zynqmp_reset 116>, <&zynqmp_reset 117>, <&zynqmp_reset 118>, <&zynqmp_reset 119>;
+        };
+    };
+    fragment@1 {
+        target = <&amba>;
+        __overlay__ {
+            #address-cells = <2>;
+            #size-cells = <2>;
+            speccore_clk0: speccore_clk0 {
+                compatible = "xlnx,fclk";
+                #clock-cells = <0>;
+                clocks = <&zynqmp_clk 71>;
+                assigned-clocks = <&zynqmp_clk 71>;
+                assigned-clock-rates = <50000000>;
+                clock-output-names = "speccore_pl0";
+            };
+            speccore_core@a0000000 {
+                compatible = "generic-uio";
+                reg = <0x0 0xa0000000 0x0 0x200000>;
+            };
+        };
+    };
+};
