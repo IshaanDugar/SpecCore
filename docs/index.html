@@ -371,7 +371,7 @@ section{border-top-color:rgba(127,169,240,.18)}</style>
     <div class="intro"><h2>Why I built this</h2></div>
     <div class="why">
       <div class="story">
-        <p>I got into computer architecture by wiring an 8-bit computer on breadboards, and lately I've been just as curious about how language models actually run. Speculative decoding sits right where the two meet. Research accelerators already do it on big FPGAs, so my question was smaller: what's the minimum change to the instruction set that lets a simple in-order core benefit, and when does it stop paying off? I couldn't find a student-built RISC-V core with ISA support for it, so I extended my own.</p>
+        <p>I got into computer architecture by wiring an 8-bit computer on breadboards, and lately I've been just as curious about how language models actually run. Speculative decoding is one of the places they meet. Research accelerators already do it on big FPGAs, so my question was smaller: what's the minimum change to the instruction set that lets a simple in-order core benefit, and when does it stop paying off? I couldn't find a student-built RISC-V core with ISA support for it, so I extended my own.</p>
         <p>The first full run was slower than plain decoding: 0.83×. Splitting every pass into shared and per-token cost showed why. Only the weight stream was shared, and attention, norms and the readout were paid again for every guess. A cycle model calibrated from that run pointed at two fixes, the ACCQ readout instruction and a better draft model, and together they took it past 1×. Then it went onto the board, where the cycle counts came out identical to the simulation.</p>
       </div>
       <aside>
