@@ -150,9 +150,11 @@ pre.text{margin:0;min-height:150px;max-height:260px;overflow:auto;font:400 .9rem
 
 /* checks and learning */
 .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s5) var(--s7)}
-.item{display:grid;gap:var(--s1);padding-top:var(--s3);border-top:1px solid var(--line)}
+.item{display:grid;align-content:start;gap:var(--s1);padding-top:var(--s3);border-top:1px solid var(--line)}
 .item p{color:var(--ink-2);font-size:.98rem}
 .learn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5) var(--s6)}
+.learn-2{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4) var(--s5);margin-top:var(--s3)}
+#learned .cols>div>h3{font-size:1.15rem}
 
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s3);padding-block:var(--s6) var(--s7);border-top:1px solid var(--line);font-size:.92rem;color:var(--muted)}
 
@@ -170,7 +172,7 @@ pre.text{margin:0;min-height:150px;max-height:260px;overflow:auto;font:400 .9rem
   <header class="top">
     <a class="mark" href="#">SpecCore</a>
     <nav class="nav" aria-label="Sections">
-      <a href="#how">How it works</a><a href="#results">Results</a><a href="#replay">Replay</a><a href="#learned">What I learned</a><a href="https://github.com/IshaanDugar/SpecCore">GitHub</a>
+      <a href="#how">How it works</a><a href="#results">Results</a><a href="#replay">Replay</a><a href="#limits">Limitations</a><a href="#learned">Skills</a><a href="https://github.com/IshaanDugar/SpecCore">GitHub</a>
     </nav>
   </header>
 
@@ -332,21 +334,40 @@ pre.text{margin:0;min-height:150px;max-height:260px;overflow:auto;font:400 .9rem
     </div>
   </section>
 
+  <section id="limits">
+    <div class="intro"><h2>Limitations and next steps</h2></div>
+    <div class="cols">
+      <div class="item"><h3>Limitations</h3><p>The models are tiny (5.2M and 0.66M parameters, 2,048-token vocabulary), so the code they write is rough. The speedup is modest: each extra verify lane still costs about a third of a pass because attention, norms and the readout run in software on the core, and 5 of 50 prompts are slower than plain decoding. The board runs at 50 MHz, so in absolute speed the core is slower than the board’s own Arm cores; the comparison that matters is plain against speculative on the same core. Decoding is greedy only, tested on contexts up to 48 tokens.</p></div>
+      <div class="item"><h3>Next steps</h3><p>Move attention, norms and the readout into hardware so that extra lanes cost almost nothing. Run larger open model pairs at int8 or int4, with a wider engine sized to the board’s memory bandwidth. Raise the clock, and stream tokens live from the board.</p></div>
+    </div>
+  </section>
+
   <section id="learned">
     <div class="intro">
-      <h2>What I learned</h2>
-      <p>The project was a way to learn the whole stack, from the maths of a language model down to timing closure on an FPGA.</p>
+      <h2>Skills I used and learned</h2>
+      <p>Some of this I brought from coursework and earlier verification work; most of the AI side I learned while building it.</p>
     </div>
-    <div class="learn">
-      <div class="item"><h3>Why decoding is memory-bound</h3><p>One token at a time, bandwidth per token, the roofline model.</p></div>
-      <div class="item"><h3>Speculative decoding</h3><p>Drafting, verification, acceptance rate, the speedup formula and the KV-cache rollback.</p></div>
-      <div class="item"><h3>Transformers from the inside</h3><p>Embeddings, attention, RoPE, RMSNorm, the MLP, residuals and the KV cache.</p></div>
-      <div class="item"><h3>Training small models</h3><p>A BPE tokenizer, training from scratch, and distilling a draft from its target.</p></div>
-      <div class="item"><h3>Integer-only inference</h3><p>int8 quantisation, fixed-point scales and an integer softmax that matches bit for bit.</p></div>
-      <div class="item"><h3>CPU microarchitecture</h3><p>Pipelining, hazards, forwarding and branch prediction, applied to choosing the draft length.</p></div>
-      <div class="item"><h3>Custom hardware for AI</h3><p>Custom instructions, broadcast lanes against systolic arrays, decoupled access and execute.</p></div>
-      <div class="item"><h3>FPGA design</h3><p>AXI and DMA, clocking, block RAM and UltraRAM, timing closure on the KV260.</p></div>
-      <div class="item"><h3>Verification</h3><p>UVM, assertions, constrained-random testing against an ISS, mutation testing and gate-level simulation.</p></div>
+    <div class="cols">
+      <div>
+        <h3>Used</h3>
+        <div class="learn learn-2">
+          <div class="item"><h3>CPU microarchitecture</h3><p>Pipelining, hazards, forwarding and branch prediction, extended here with custom instructions.</p></div>
+          <div class="item"><h3>Verification</h3><p>UVM, SystemVerilog assertions and directed tests, applied to the LLM unit and the core.</p></div>
+          <div class="item"><h3>RTL design</h3><p>Verilog and SystemVerilog, simulation and synthesis in Vivado.</p></div>
+        </div>
+      </div>
+      <div>
+        <h3>Learned</h3>
+        <div class="learn learn-2">
+          <div class="item"><h3>Why decoding is memory-bound</h3><p>Bandwidth per token and the roofline model.</p></div>
+          <div class="item"><h3>Speculative decoding</h3><p>Drafting, verification, acceptance rate and the speedup formula.</p></div>
+          <div class="item"><h3>Transformers from the inside</h3><p>Attention, RoPE, RMSNorm, the MLP and the KV cache.</p></div>
+          <div class="item"><h3>Training small models</h3><p>A BPE tokenizer, training from scratch, distilling a draft.</p></div>
+          <div class="item"><h3>Integer-only inference</h3><p>int8 quantisation, fixed-point scales, an integer softmax.</p></div>
+          <div class="item"><h3>FPGA integration</h3><p>AXI, DMA, block RAM and UltraRAM, timing closure on the KV260.</p></div>
+          <div class="item"><h3>Advanced verification</h3><p>Constrained-random testing against an ISS, mutation testing, gate-level simulation.</p></div>
+        </div>
+      </div>
     </div>
   </section>
 
